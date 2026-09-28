@@ -1,0 +1,13 @@
+.git*
+.github/
+.pytest_cache/
+.venv/
+__pycache__/
+*.pyc
+data/
+docs/
+reports/
+tests/
+*.log
+*.pid
+local.settings.json

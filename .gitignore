@@ -14,3 +14,4 @@ venv/
 reports/
 *.log
 .ireland-forecast-server.pid
+local.settings.json

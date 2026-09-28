@@ -389,14 +389,57 @@ publish from the `main` branch and `/docs` folder. The build uses relative
 asset paths so it works below a project URL such as
 `https://enkelly-pac.github.io/ireland-astro-seeing-forecast/`.
 
-The server exposes two JSON API endpoints used by the browser UI:
+### Azure Functions API
+
+The public API is packaged as a Python 3.11 Azure Functions v2 application.
+It exposes anonymous HTTP endpoints at:
 
 ```
+GET /api/health
 GET /api/geocode?q=<search text>[&limit=8]
 GET /api/forecast?lat=<latitude>&lon=<longitude>&name=<display name>&hours=96
 ```
 
-Both endpoints validate their input explicitly (numeric, in-range
+Use a personal Azure subscription and Flex Consumption so the app scales to
+zero when it is idle. The deployment script refuses to use the Microsoft
+corporate tenant.
+
+1. Sign into the personal account and select its subscription:
+
+   ```powershell
+   az logout
+   az login
+   az account list --output table
+   ```
+
+2. Deploy the resources and API:
+
+   ```powershell
+   .\scripts\Deploy-Azure-Api.ps1 `
+     -SubscriptionId "<personal-subscription-id>"
+   ```
+
+   The script creates a resource group, private storage account and Python
+   3.11 Flex Consumption function app in North Europe. It allows requests
+   from `https://enkelly-pac.github.io`, deploys with an Azure remote build
+   and waits for `/api/health` to respond. The app is capped at two
+   instances to limit unexpected usage costs.
+
+3. Connect and republish the static frontend using the API address printed
+   by the script:
+
+   ```powershell
+   python scripts\build_pages.py `
+     --api-base "https://ireland-astro-seeing-api-enkelly.azurewebsites.net"
+   git add docs
+   git commit -m "Connect GitHub Pages to forecast API"
+   git push
+   ```
+
+The function app name is globally unique. If the default name is already
+taken, pass a different lowercase name with `-FunctionAppName`.
+
+The geocode and forecast endpoints validate their input explicitly (numeric, in-range
 coordinates; whole-number hours from 1 to 120; a non-empty search string)
 and return a JSON `{"error": "..."}` body with an HTTP 4xx status on
 invalid input, rather than silently accepting bad values.
