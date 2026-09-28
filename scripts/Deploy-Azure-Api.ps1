@@ -103,19 +103,13 @@ if ($LASTEXITCODE -ne 0) {
     throw "Could not apply the function app scale limit."
 }
 
-$Cors = az functionapp cors show `
+az functionapp cors add `
     --name $FunctionAppName `
     --resource-group $ResourceGroup `
-    --output json | ConvertFrom-Json
-if ($PagesOrigin -notin $Cors.allowedOrigins) {
-    az functionapp cors add `
-        --name $FunctionAppName `
-        --resource-group $ResourceGroup `
-        --allowed-origins $PagesOrigin `
-        --output none
-    if ($LASTEXITCODE -ne 0) {
-        throw "Could not allow the GitHub Pages origin in the function app CORS policy."
-    }
+    --allowed-origins $PagesOrigin `
+    --output none
+if ($LASTEXITCODE -ne 0) {
+    throw "Could not allow the GitHub Pages origin in the function app CORS policy."
 }
 
 $StageDirectory = Join-Path $env:TEMP ("ireland-astro-api-" + [Guid]::NewGuid().ToString("N"))
