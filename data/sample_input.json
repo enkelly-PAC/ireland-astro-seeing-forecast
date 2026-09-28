@@ -1,0 +1,18 @@
+{
+  "location_name": "Reconstruction test site (synthetic profile, not proprietary meteoblue data)",
+  "valid_time_utc": "2026-09-27T22:00:00Z",
+  "site_elevation_m_asl": 500,
+  "wavelength_nm": 500,
+  "levels": [
+    {"altitude_m_asl": 500,   "pressure_hpa": 950, "temperature_c": 18.0,  "relative_humidity_pct": 55, "wind_u_ms": 2,  "wind_v_ms": 1,  "cloud_cover_pct": 20},
+    {"altitude_m_asl": 1500,  "pressure_hpa": 850, "temperature_c": 11.5,  "relative_humidity_pct": 50, "wind_u_ms": 6,  "wind_v_ms": 3,  "cloud_cover_pct": 10},
+    {"altitude_m_asl": 3000,  "pressure_hpa": 700, "temperature_c": 2.0,   "relative_humidity_pct": 40, "wind_u_ms": 12, "wind_v_ms": 6,  "cloud_cover_pct": 0},
+    {"altitude_m_asl": 4000,  "pressure_hpa": 620, "temperature_c": 8.0,   "relative_humidity_pct": 25, "wind_u_ms": 20, "wind_v_ms": 10, "cloud_cover_pct": 0},
+    {"altitude_m_asl": 5000,  "pressure_hpa": 540, "temperature_c": 10.0,  "relative_humidity_pct": 20, "wind_u_ms": 28, "wind_v_ms": 13, "cloud_cover_pct": 0},
+    {"altitude_m_asl": 7000,  "pressure_hpa": 410, "temperature_c": -8.0,  "relative_humidity_pct": 15, "wind_u_ms": 38, "wind_v_ms": 16, "cloud_cover_pct": 0},
+    {"altitude_m_asl": 9000,  "pressure_hpa": 300, "temperature_c": -35.0, "relative_humidity_pct": 10, "wind_u_ms": 46, "wind_v_ms": 20, "cloud_cover_pct": 0},
+    {"altitude_m_asl": 11000, "pressure_hpa": 225, "temperature_c": -55.0, "relative_humidity_pct": 5,  "wind_u_ms": 55, "wind_v_ms": 23, "cloud_cover_pct": 0},
+    {"altitude_m_asl": 11800, "pressure_hpa": 200, "temperature_c": -56.5, "relative_humidity_pct": 5,  "wind_u_ms": 50, "wind_v_ms": 26, "cloud_cover_pct": 0},
+    {"altitude_m_asl": 13000, "pressure_hpa": 170, "temperature_c": -58.0, "relative_humidity_pct": 5,  "wind_u_ms": 40, "wind_v_ms": 15, "cloud_cover_pct": 0}
+  ]
+}

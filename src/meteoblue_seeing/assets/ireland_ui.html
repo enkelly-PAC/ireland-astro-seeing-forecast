@@ -1,0 +1,2315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ireland Astro Seeing Forecast</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0b1020;
+    --panel: #11182a;
+    --panel-alt: #151d31;
+    --border: #283653;
+    --text: #e7edf7;
+    --muted: #9aa8bd;
+    --accent: #4d8dff;
+    --great: #1d7a46;
+    --good: #4d7d28;
+    --mixed: #9a7221;
+    --poor: #963b3b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.45 "Segoe UI", Tahoma, sans-serif;
+  }
+  main { max-width: 1240px; margin: 0 auto; padding: 20px 24px 48px; }
+  h1 { margin: 0 0 4px; font-size: 26px; }
+  h2 { margin: 28px 0 10px; font-size: 19px; }
+  .muted { color: var(--muted); }
+  .layout { display: grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: 18px; margin-top: 18px; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  #map { height: 420px; border-radius: 12px; border: 1px solid var(--border); }
+  label { display: block; margin: 10px 0 4px; font-size: 13px; color: var(--muted); }
+  input[type="text"], input[type="number"], input[type="time"], select {
+    width: 100%;
+    padding: 8px 10px;
+    background: #0e1526;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+  }
+  .search-row { display: flex; gap: 8px; }
+  .search-row input { flex: 1; }
+  button {
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: #06122b;
+    font-weight: 700;
+    padding: 9px 14px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  button:hover { filter: brightness(1.08); }
+  button:disabled { opacity: 0.55; cursor: not-allowed; }
+  button.secondary { background: #22304c; color: var(--text); }
+  #search-results {
+    list-style: none;
+    margin: 6px 0 0;
+    padding: 0;
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: none;
+  }
+  #search-results li {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    font-size: 13px;
+  }
+  #search-results li:last-child { border-bottom: none; }
+  #search-results li:hover { background: var(--panel-alt); }
+  .selected-box {
+    margin-top: 14px;
+    padding: 12px;
+    background: var(--panel-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .selected-box .name { font-weight: 700; font-size: 15px; }
+  .selected-box .coords { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .generate-row { margin-top: 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .field-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .field-label-row label { margin: 0; }
+  .compact-action {
+    padding: 4px 9px;
+    border: 1px solid var(--border);
+    background: #22304c;
+    color: var(--text);
+    font-size: 11px;
+  }
+  .status { margin-top: 12px; font-size: 13px; }
+  .status.error { color: #ff8b8b; }
+  .status.loading { color: var(--accent); }
+  .setup-details, .supporting-details {
+    margin-top: 18px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--panel);
+  }
+  .setup-details > summary, .supporting-details > summary {
+    cursor: pointer;
+    padding: 14px 16px;
+    font-weight: 700;
+    list-style-position: inside;
+  }
+  .setup-details[open] > summary, .supporting-details[open] > summary {
+    border-bottom: 1px solid var(--border);
+  }
+  .setup-details .layout { margin: 0; padding: 16px; }
+  .supporting-content { padding: 14px; }
+  .results-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 18px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #10182a;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .results-actions button { flex: 0 0 auto; }
+  .planner-panel {
+    margin-top: 24px;
+    padding: 16px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .planner-panel h2 { margin-top: 0; }
+  .planner-setup {
+    display: grid;
+    grid-template-columns: minmax(210px, 0.7fr) minmax(460px, 1.8fr);
+    gap: 12px;
+  }
+  .planner-step {
+    padding: 13px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #0e1526;
+  }
+  .planner-step-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+  .planner-step-number {
+    display: grid;
+    place-items: center;
+    width: 23px;
+    height: 23px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #06122b;
+    font-size: 12px;
+  }
+  .planner-step label { margin: 0; }
+  .night-selection-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 7px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .night-selection-actions { display: flex; gap: 6px; }
+  .night-action {
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    background: #18233a;
+    color: var(--text);
+    font-size: 11px;
+  }
+  .night-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+    gap: 7px;
+    margin-bottom: 11px;
+  }
+  .night-option {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 36px;
+    padding: 7px 9px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #111a2d;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .night-option:has(input:checked) {
+    border-color: var(--accent);
+    background: #172747;
+  }
+  .night-option input { margin: 0; accent-color: var(--accent); }
+  .planner-time-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+    gap: 10px;
+    align-items: end;
+  }
+  .planner-help { margin: 9px 0 0; color: var(--muted); font-size: 12px; }
+  .planner-result-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 18px 0 0;
+    font-size: 16px;
+  }
+  .primary-window {
+    margin-top: 12px;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-top: 4px solid var(--window-colour, var(--accent));
+    border-radius: 12px;
+    background: linear-gradient(145deg, #18233a, #111827);
+  }
+  .primary-window-grid {
+    display: grid;
+    grid-template-columns: auto minmax(170px, 0.8fr) 1.7fr;
+    gap: 18px;
+    align-items: center;
+  }
+  .primary-window .score-ring { width: 88px; height: 88px; }
+  .primary-window .score-ring::before { width: 68px; height: 68px; background: #18233a; }
+  .primary-window .score-ring strong { font-size: 25px; }
+  .primary-window-title { color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+  .primary-window-date { font-size: 19px; font-weight: 700; line-height: 1.15; }
+  .primary-window-time { margin-top: 5px; font-size: 23px; font-weight: 700; }
+  .primary-window-duration { margin-top: 3px; color: var(--muted); }
+  .primary-reason {
+    margin-top: 12px;
+    padding: 9px 11px;
+    border-left: 3px solid var(--window-colour, var(--accent));
+    background: rgba(7, 12, 23, 0.45);
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .alternative-heading { margin: 18px 0 8px; font-size: 15px; }
+  .alternative-cards { grid-template-columns: repeat(3, minmax(220px, 1fr)); }
+  .alternative-cards .window-card { min-height: 0; }
+  .timeline-panel {
+    margin-top: 18px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #0d1424;
+  }
+  .timeline-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .timeline-head h3 { margin: 0; font-size: 16px; }
+  .timeline-guide { color: var(--muted); font-size: 11px; }
+  #imaging-timeline { display: block; width: 100%; height: 360px; margin-top: 8px; }
+  .timeline-summary { margin-top: 5px; color: var(--muted); font-size: 12px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin: 14px 0; }
+  .card { background: var(--panel-alt); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+  .window-toolbar {
+    display: grid;
+    grid-template-columns: minmax(180px, 260px) 1fr;
+    gap: 14px;
+    align-items: end;
+    margin-bottom: 10px;
+  }
+  .window-toolbar label { margin: 0; }
+  .window-toolbar p { margin: 0 0 4px; color: var(--muted); font-size: 13px; }
+  .window-card {
+    position: relative;
+    overflow: hidden;
+    min-height: 150px;
+    border-top: 3px solid var(--window-colour);
+    background: linear-gradient(145deg, var(--panel-alt), #111827);
+  }
+  .window-card::after {
+    content: "";
+    position: absolute;
+    right: -45px;
+    bottom: -55px;
+    width: 135px;
+    height: 135px;
+    border-radius: 50%;
+    background: var(--window-colour);
+    opacity: 0.06;
+  }
+  .window-rank {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .window-card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .cloud-visual {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .cloud-visual svg { width: 52px; height: 34px; overflow: visible; }
+  .weather-moon { fill: #d7dce5; }
+  .weather-star { fill: #95a8c5; }
+  .weather-cloud-back { fill: #7f8b9d; }
+  .weather-cloud-front { fill: #c8ced8; }
+  .cloud-band-clear { background: rgba(77, 141, 255, 0.08); }
+  .cloud-band-low { background: rgba(134, 163, 204, 0.08); }
+  .cloud-band-medium { background: rgba(151, 159, 174, 0.11); }
+  .cloud-band-high { background: rgba(116, 126, 145, 0.15); }
+  .cloud-band-overcast { background: rgba(83, 92, 109, 0.22); }
+  .cloud-visual { padding: 2px 5px; border-radius: 8px; }
+  .window-main { display: flex; align-items: center; gap: 14px; margin: 10px 0; }
+  .score-ring {
+    display: grid;
+    place-items: center;
+    flex: 0 0 72px;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: conic-gradient(
+      var(--window-colour) var(--window-progress),
+      #28344a 0
+    );
+  }
+  .score-ring::before {
+    content: "";
+    grid-area: 1 / 1;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--panel-alt);
+  }
+  .score-ring strong {
+    grid-area: 1 / 1;
+    position: relative;
+    font-size: 22px;
+  }
+  .window-date { font-size: 19px; font-weight: 700; line-height: 1.15; }
+  .window-time { margin-top: 5px; color: var(--muted); font-size: 14px; font-weight: 600; }
+  .window-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .window-metric {
+    padding: 7px 9px;
+    background: #0f1728;
+    border-radius: 8px;
+  }
+  .window-metric span { display: block; color: var(--muted); font-size: 10px; text-transform: uppercase; }
+  .window-metric strong { display: block; margin-top: 2px; font-size: 14px; }
+  .window-metric .seeing-rating { color: var(--text); font-size: 14px; }
+  .window-metric .seeing-score { color: var(--muted); font-size: 12px; font-weight: 700; }
+  .window-metric .seeing-detail { margin-top: 2px; color: var(--muted); font-size: 12px; font-weight: 600; }
+  .astro-panel {
+    padding: 14px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .astro-controls {
+    display: grid;
+    grid-template-columns: minmax(180px, 1.4fr) minmax(120px, 1fr) minmax(120px, 1fr);
+    gap: 10px;
+    align-items: end;
+  }
+  .astro-controls label { margin: 0; }
+  .astro-summary { margin: 10px 0 12px; color: var(--muted); font-size: 13px; }
+  .astro-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+  }
+  .astro-card {
+    padding: 14px;
+    background: var(--panel-alt);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .astro-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .body-identity { display: flex; align-items: center; gap: 9px; }
+  .body-image-shell {
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #26334a, #0c1322 72%);
+  }
+  .body-image {
+    position: relative;
+    z-index: 1;
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.65));
+  }
+  .body-fallback {
+    position: absolute;
+    color: var(--muted);
+    font-weight: 800;
+  }
+  .body-name { font-size: 17px; font-weight: 700; }
+  .visibility-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .visibility-pill.excellent { background: var(--great); }
+  .visibility-pill.good { background: var(--good); }
+  .visibility-pill.low { background: var(--mixed); }
+  .visibility-pill.hidden { background: #38445b; color: var(--muted); }
+  .astro-best { margin: 12px 0 4px; }
+  .astro-best .altitude { font-size: 30px; font-weight: 700; line-height: 1; }
+  .astro-best .best-time { margin-top: 4px; color: var(--muted); }
+  .altitude-track {
+    position: relative;
+    height: 8px;
+    margin: 12px 0 4px;
+    overflow: hidden;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #7b3f32 0 17%, #8f742b 17% 33%, #477c42 33% 50%, #2e8b62 50% 100%);
+    opacity: 0.9;
+  }
+  .altitude-marker {
+    position: absolute;
+    top: -3px;
+    width: 3px;
+    height: 14px;
+    border-radius: 2px;
+    background: white;
+    box-shadow: 0 0 5px rgba(255,255,255,0.8);
+  }
+  .altitude-scale { display: flex; justify-content: space-between; color: var(--muted); font-size: 9px; }
+  .astro-coverage { margin: 10px 0; font-size: 13px; }
+  .astro-events {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .astro-event {
+    padding: 7px;
+    background: #10182a;
+    border-radius: 7px;
+    text-align: center;
+  }
+  .astro-event .event-label {
+    display: block;
+    margin-bottom: 2px;
+    color: var(--muted);
+    font-size: 10px;
+    text-transform: uppercase;
+  }
+  .planet-detail { color: var(--muted); }
+  .seeing-simulator {
+    display: grid;
+    grid-template-columns: minmax(180px, 240px) 1fr;
+    gap: 16px;
+    align-items: start;
+    padding: 14px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .seeing-simulator-copy p { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+  .seeing-target-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: #0e1526;
+  }
+  .seeing-target-preview img { width: 46px; height: 46px; object-fit: contain; }
+  .seeing-target-preview span { display: block; color: var(--muted); font-size: 11px; }
+  .seeing-target-preview strong { display: block; margin-top: 2px; font-size: 16px; }
+  .seeing-scale-details { margin-top: 10px; font-size: 12px; }
+  .seeing-scale-details summary { color: var(--accent); cursor: pointer; font-weight: 700; }
+  .seeing-scale-grid {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 3px 8px;
+    margin-top: 7px;
+    color: var(--muted);
+  }
+  .seeing-scale-grid strong { color: var(--text); }
+  .seeing-samples {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(110px, 1fr));
+    gap: 8px;
+  }
+  .seeing-sample {
+    overflow: hidden;
+    background: #070b14;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    text-align: center;
+  }
+  .seeing-sample canvas { display: block; width: 100%; height: 108px; }
+  .seeing-sample-label {
+    padding: 7px;
+    border-top: 1px solid var(--border);
+    background: #11192a;
+  }
+  .seeing-sample-label strong { display: block; font-size: 15px; }
+  .seeing-sample-label span { display: block; color: var(--muted); font-size: 11px; }
+  .seeing-sample-label span + span { margin-top: 2px; font-size: 10px; }
+  .filter-bar {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(130px, 1fr)) auto;
+    gap: 10px;
+    align-items: end;
+    padding: 12px;
+    background: var(--panel-alt);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .filter-bar label { margin: 0; }
+  .filter-bar button { min-height: 36px; }
+  .filter-summary { margin: 7px 2px 0; color: var(--muted); font-size: 12px; }
+  @media (max-width: 800px) {
+    .astro-controls { grid-template-columns: 1fr; }
+    .planner-setup { grid-template-columns: 1fr; }
+    .planner-time-controls { grid-template-columns: 1fr; }
+    .primary-window-grid { grid-template-columns: auto 1fr; }
+    .primary-window-grid .window-metrics { grid-column: 1 / -1; }
+    .alternative-cards { grid-template-columns: 1fr; }
+    .filter-bar { grid-template-columns: repeat(2, minmax(130px, 1fr)); }
+    .seeing-simulator { grid-template-columns: 1fr; }
+    .seeing-samples { grid-template-columns: repeat(3, minmax(100px, 1fr)); }
+  }
+  .table-wrap { overflow-x: auto; margin-top: 8px; }
+  table { width: 100%; border-collapse: collapse; background: var(--panel); }
+  th, td { padding: 7px 9px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; font-size: 13px; }
+  th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+  th { position: sticky; top: 0; background: #18233a; }
+  .sort-button {
+    width: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    text-align: inherit;
+  }
+  .sort-button:hover, .sort-button:focus-visible { color: #8fb6ff; filter: none; }
+  .sort-button .sort-direction { color: var(--muted); font-size: 11px; }
+  .score { display: inline-block; min-width: 26px; padding: 2px 6px; border-radius: 10px; text-align: center; font-weight: 700; }
+  .great { background: var(--great); } .good { background: var(--good); }
+  .mixed { background: var(--mixed); } .poor { background: var(--poor); }
+  footer.attribution { margin-top: 30px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--border); padding-top: 12px; }
+  a { color: var(--accent); }
+  .leaflet-control-attribution { background: rgba(11,16,32,0.75) !important; color: var(--muted) !important; }
+  .leaflet-control-attribution a { color: var(--text) !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Ireland Astro Seeing Forecast</h1>
+  <div class="muted">
+    Click the map or search for a place anywhere in Ireland (Republic of Ireland
+    and Northern Ireland), then generate a rolling UK Met Office hourly
+    forecast. UKV 2 km is used near term, with UKMO Global extending the
+    forecast to four complete days.
+  </div>
+
+  <details id="location-panel" class="setup-details" open>
+    <summary id="location-summary">Location and forecast setup</summary>
+  <div class="layout">
+    <div class="panel">
+      <label for="search-input">Search by place or coordinates</label>
+      <div class="search-row">
+        <input id="search-input" type="text" placeholder="e.g. Galway or 53.27, -9.06" autocomplete="off">
+        <button id="search-button" type="button">Search</button>
+      </div>
+      <ul id="search-results"></ul>
+
+      <div class="selected-box">
+        <div class="name" id="selected-name">Wicklow Head, County Wicklow, Ireland</div>
+        <div class="coords" id="selected-coords">52.96544, -6.00233</div>
+      </div>
+
+      <div class="field-label-row">
+        <label for="hours-input">Forecast length (hours, 1 to 120)</label>
+        <button id="max-hours-button" class="compact-action" type="button">
+          Use maximum: 120
+        </button>
+      </div>
+      <input id="hours-input" type="number" min="1" max="120" value="96">
+
+      <div class="generate-row">
+        <button id="generate-button" type="button">Generate forecast</button>
+        <button id="clear-button" type="button" class="secondary">Clear</button>
+      </div>
+      <div id="status" class="status"></div>
+    </div>
+
+    <div class="panel">
+      <div id="map"></div>
+    </div>
+  </div>
+  </details>
+
+  <div id="results" style="display:none;">
+    <div class="results-actions">
+      <span>Want a longer forecast or a different location?</span>
+      <button id="change-forecast-button" class="secondary" type="button">
+        Change forecast setup
+      </button>
+    </div>
+    <section class="planner-panel">
+      <h2>Planetary imaging planner</h2>
+      <div class="planner-setup">
+        <div class="planner-step">
+          <div class="planner-step-heading">
+            <span class="planner-step-number">1</span>
+            <span>Choose what you want to image</span>
+          </div>
+          <label for="imaging-target">Target
+            <select id="imaging-target">
+              <option value="moon" selected>Moon</option>
+              <option value="mercury">Mercury</option>
+              <option value="venus">Venus</option>
+              <option value="mars">Mars</option>
+              <option value="jupiter">Jupiter</option>
+              <option value="saturn">Saturn</option>
+              <option value="uranus">Uranus</option>
+              <option value="neptune">Neptune</option>
+            </select>
+          </label>
+        </div>
+        <div class="planner-step">
+          <div class="planner-step-heading">
+            <span class="planner-step-number">2</span>
+            <span>Compare the forecast nights</span>
+          </div>
+          <div class="night-selection-head">
+            <span>All available nights are selected by default</span>
+            <span class="night-selection-actions">
+              <button id="select-all-nights" class="night-action" type="button">Select all</button>
+              <button id="clear-nights" class="night-action" type="button">Clear</button>
+            </span>
+          </div>
+          <div id="astro-date-options" class="night-options" role="group"
+            aria-label="Forecast nights to compare"></div>
+          <div class="planner-time-controls">
+            <label for="astro-start-time">Hours considered from
+              <input id="astro-start-time" type="time" value="18:00">
+            </label>
+            <label for="astro-end-time">Hours considered until
+              <input id="astro-end-time" type="time" value="06:00">
+            </label>
+          </div>
+          <p class="planner-help">
+            The planner searches every selected night and ranks the strongest
+            one-hour and two-hour sessions. Narrow the nights or hours only
+            when needed. Ranking combines seeing, cloud and target elevation;
+            full daylight is excluded.
+          </p>
+        </div>
+      </div>
+      <h3 class="planner-result-heading">
+        <span class="planner-step-number">3</span>
+        <span>Review the best conditions across the selected nights</span>
+      </h3>
+      <div id="primary-window"></div>
+      <h3 class="alternative-heading">Alternative sessions</h3>
+      <div class="cards alternative-cards" id="cards"></div>
+      <div class="timeline-panel">
+        <div class="timeline-head">
+          <h3 id="timeline-title">Best-night conditions</h3>
+          <div class="timeline-guide">Separate scale for each row</div>
+        </div>
+        <canvas id="imaging-timeline" width="1000" height="360" aria-label="Separate target elevation, seeing and cloud timelines"></canvas>
+        <div id="timeline-summary" class="timeline-summary" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <details id="compare-details" class="supporting-details">
+      <summary>Compare all targets tonight</summary>
+      <div class="supporting-content">
+        <div id="astro-summary" class="astro-summary" aria-live="polite"></div>
+        <div id="astro-body" class="astro-grid"></div>
+      </div>
+    </details>
+
+    <details id="seeing-details" class="supporting-details">
+      <summary>How the seeing score works</summary>
+      <div class="supporting-content">
+        <div class="seeing-simulator">
+          <div class="seeing-simulator-copy">
+            <div class="seeing-target-preview">
+              <img id="seeing-target-image" src="/assets/seeing-moon-clavius.webp?v=user-20221003" alt="">
+              <div><span>Selected imaging target</span><strong id="seeing-target-name">Moon</strong></div>
+            </div>
+            <p>
+              The planner's selected target is shown with qualitative
+              atmospheric blur and image motion at representative seeing
+              scores. Telescope aperture, magnification, wavelength and local
+              turbulence will change the real view.
+              Good seeing is shown as mostly clear with occasional softening,
+              rather than constant image drift.
+              The simulator labels use the same approximate Pickering-style
+              arcsecond conversion as the hourly seeing score.
+            </p>
+            <details class="seeing-scale-details">
+              <summary>Full arcsecond score scale</summary>
+              <div class="seeing-scale-grid">
+                <strong>10</strong><span>Under 0.5 arcsec</span><span>Perfect</span>
+                <strong>9</strong><span>0.5 to under 0.7</span><span>Excellent</span>
+                <strong>8</strong><span>0.7 to 1.0</span><span>Very good</span>
+                <strong>7</strong><span>Over 1.0 to 1.5</span><span>Good</span>
+                <strong>6</strong><span>Over 1.5 to 2.0</span><span>Good</span>
+                <strong>5</strong><span>Over 2.0 to 2.5</span><span>Average</span>
+                <strong>4</strong><span>Over 2.5 to 3.0</span><span>Poor</span>
+                <strong>3</strong><span>Over 3.0 to 4.0</span><span>Poor</span>
+                <strong>2</strong><span>Over 4.0 to 5.0</span><span>Terrible</span>
+                <strong>1</strong><span>Over 5.0 arcsec</span><span>Terrible</span>
+              </div>
+            </details>
+          </div>
+          <div id="seeing-samples" class="seeing-samples" aria-label="Simulated seeing score comparison"></div>
+        </div>
+      </div>
+    </details>
+
+    <details class="supporting-details">
+      <summary>View full hourly forecast</summary>
+      <div class="supporting-content">
+        <div class="filter-bar" aria-label="Hourly forecast filters">
+          <label for="filter-light">Light condition
+            <select id="filter-light">
+              <option value="">All conditions</option>
+              <option value="night">Night only</option>
+              <option value="twilight">Twilight only</option>
+              <option value="daylight">Daylight only</option>
+            </select>
+          </label>
+          <label for="filter-max-cloud">Maximum cloud %
+            <input id="filter-max-cloud" type="number" min="0" max="100" step="1" placeholder="Any">
+          </label>
+          <label for="filter-min-seeing">Minimum seeing score
+            <input id="filter-min-seeing" type="number" min="1" max="10" step="1" placeholder="Any">
+          </label>
+          <label for="filter-min-imaging">Minimum imaging score
+            <input id="filter-min-imaging" type="number" min="1" max="10" step="1" placeholder="Any">
+          </label>
+          <button id="reset-filters" type="button" class="secondary">Reset filters</button>
+        </div>
+        <div id="filter-summary" class="filter-summary" aria-live="polite"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th aria-sort="ascending"><button class="sort-button" type="button" data-sort-key="local_time">Local time <span class="sort-direction">[asc]</span></button></th>
+                <th aria-sort="none"><button class="sort-button" type="button" data-sort-key="light_state">Light <span class="sort-direction"></span></button></th>
+                <th aria-sort="none"><button class="sort-button" type="button" data-sort-key="total_cloud_pct">Total cloud <span class="sort-direction"></span></button></th>
+                <th aria-sort="none"><button class="sort-button" type="button" data-sort-key="low_cloud_pct">Low <span class="sort-direction"></span></button></th>
+                <th aria-sort="none"><button class="sort-button" type="button" data-sort-key="mid_cloud_pct">Mid <span class="sort-direction"></span></button></th>
+                <th aria-sort="none"><button class="sort-button" type="button" data-sort-key="high_cloud_pct">High <span class="sort-direction"></span></button></th>
+                <th aria-sort="none"><button class="sort-button" type="button" data-sort-key="arcsec">Seeing arcsec <span class="sort-direction"></span></button></th>
+                <th aria-sort="none"><button class="sort-button" type="button" data-sort-key="seeing_score">Seeing 1-10 <span class="sort-direction"></span></button></th>
+                <th aria-sort="none"><button class="sort-button" type="button" data-sort-key="imaging_score">Imaging 1-10 <span class="sort-direction"></span></button></th>
+                <th aria-sort="none"><button class="sort-button" type="button" data-sort-key="visibility_m">Visibility <span class="sort-direction"></span></button></th>
+                <th aria-sort="none"><button class="sort-button" type="button" data-sort-key="jet_speed">Jet (200 hPa) <span class="sort-direction"></span></button></th>
+              </tr>
+            </thead>
+            <tbody id="forecast-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <footer class="attribution">
+    <p>
+      Map tiles &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>
+      contributors. Place search by the
+      <a href="https://open-meteo.com/en/docs/geocoding-api" target="_blank" rel="noopener">Open-Meteo Geocoding API</a>.
+      Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a> and the
+      UK Met Office. Moon and planetary calculations by
+      <a href="https://github.com/cosinekitty/astronomy" target="_blank" rel="noopener">Astronomy Engine</a>.
+      Planet imagery is derived from NASA Scientific Visualization Studio
+      spacecraft imagery; the Moon thumbnail uses NASA Lunar Reconnaissance
+      Orbiter imagery. The Saturn image and Clavius seeing image were supplied by the user.
+      This site requires an internet connection to fetch forecasts, place search results and map tiles.
+    </p>
+    <p>
+      Seeing score (1 to 10, 10 best) reflects atmospheric seeing only. Cloud is never folded into it.
+      The imaging conditions score (1 to 10, 10 best) combines seeing and cloud without a darkness penalty.
+      Target-specific imaging windows also include the selected body's elevation and exclude full daylight.
+    </p>
+  </footer>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+(function () {
+  "use strict";
+
+  var IRELAND_BOUNDS = [[51.0, -11.5], [55.6, -5.0]];
+  var WICKLOW_HEAD = { name: "Wicklow Head, County Wicklow, Ireland", lat: 52.96544, lon: -6.00233 };
+
+  var map = L.map("map", {
+    maxBounds: L.latLngBounds(IRELAND_BOUNDS).pad(0.15),
+    minZoom: 6,
+  }).setView([53.4, -8.0], 6);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 18,
+    attribution: "&copy; OpenStreetMap contributors",
+  }).addTo(map);
+
+  var marker = L.marker([WICKLOW_HEAD.lat, WICKLOW_HEAD.lon], { draggable: true }).addTo(map);
+
+  var selectedNameEl = document.getElementById("selected-name");
+  var selectedCoordsEl = document.getElementById("selected-coords");
+  var searchInput = document.getElementById("search-input");
+  var searchButton = document.getElementById("search-button");
+  var searchResultsEl = document.getElementById("search-results");
+  var hoursInput = document.getElementById("hours-input");
+  var maxHoursButton = document.getElementById("max-hours-button");
+  var generateButton = document.getElementById("generate-button");
+  var clearButton = document.getElementById("clear-button");
+  var statusEl = document.getElementById("status");
+  var resultsEl = document.getElementById("results");
+  var locationPanelEl = document.getElementById("location-panel");
+  var locationSummaryEl = document.getElementById("location-summary");
+  var changeForecastButton = document.getElementById("change-forecast-button");
+  var primaryWindowEl = document.getElementById("primary-window");
+  var cardsEl = document.getElementById("cards");
+  var imagingTimelineEl = document.getElementById("imaging-timeline");
+  var timelineTitleEl = document.getElementById("timeline-title");
+  var timelineSummaryEl = document.getElementById("timeline-summary");
+  var imagingTargetInput = document.getElementById("imaging-target");
+  var seeingDetailsEl = document.getElementById("seeing-details");
+  var seeingTargetImageEl = document.getElementById("seeing-target-image");
+  var seeingTargetNameEl = document.getElementById("seeing-target-name");
+  var seeingSamplesEl = document.getElementById("seeing-samples");
+  var astroDateOptionsEl = document.getElementById("astro-date-options");
+  var selectAllNightsButton = document.getElementById("select-all-nights");
+  var clearNightsButton = document.getElementById("clear-nights");
+  var astroStartTimeInput = document.getElementById("astro-start-time");
+  var astroEndTimeInput = document.getElementById("astro-end-time");
+  var astroSummaryEl = document.getElementById("astro-summary");
+  var astroBodyEl = document.getElementById("astro-body");
+  var forecastBodyEl = document.getElementById("forecast-body");
+  var sortButtons = Array.prototype.slice.call(document.querySelectorAll(".sort-button"));
+  var filterLightInput = document.getElementById("filter-light");
+  var filterMaxCloudInput = document.getElementById("filter-max-cloud");
+  var filterMinSeeingInput = document.getElementById("filter-min-seeing");
+  var filterMinImagingInput = document.getElementById("filter-min-imaging");
+  var resetFiltersButton = document.getElementById("reset-filters");
+  var filterSummaryEl = document.getElementById("filter-summary");
+
+  var selected = { name: WICKLOW_HEAD.name, lat: WICKLOW_HEAD.lat, lon: WICKLOW_HEAD.lon };
+  var currentForecasts = [];
+  var currentAstronomy = { bodies: [], days: [] };
+  var tableSort = { key: "local_time", direction: "asc" };
+
+  function updateSelectedDisplay() {
+    selectedNameEl.textContent = selected.name;
+    selectedCoordsEl.textContent = selected.lat.toFixed(5) + ", " + selected.lon.toFixed(5);
+  }
+
+  function setSelected(name, lat, lon, recenter) {
+    selected = { name: name, lat: lat, lon: lon };
+    marker.setLatLng([lat, lon]);
+    if (recenter) {
+      map.setView([lat, lon], 10);
+    }
+    updateSelectedDisplay();
+  }
+
+  function coordinateText(lat, lon) {
+    return lat.toFixed(5) + ", " + lon.toFixed(5);
+  }
+
+  function selectMapCoordinate(lat, lon) {
+    setSelected("Custom location", lat, lon, false);
+    searchInput.value = coordinateText(lat, lon);
+    hideSearchResults();
+    resultsEl.style.display = "none";
+    showStatus("Coordinates selected. Click Generate forecast.", "");
+  }
+
+  map.on("click", function (event) {
+    selectMapCoordinate(event.latlng.lat, event.latlng.lng);
+  });
+
+  marker.on("dragend", function () {
+    var position = marker.getLatLng();
+    selectMapCoordinate(position.lat, position.lng);
+  });
+
+  function showStatus(message, kind) {
+    statusEl.textContent = message || "";
+    statusEl.className = "status" + (kind ? " " + kind : "");
+  }
+
+  function hideSearchResults() {
+    searchResultsEl.style.display = "none";
+    searchResultsEl.innerHTML = "";
+  }
+
+  function runSearch() {
+    var query = searchInput.value.trim();
+    if (!query) {
+      showStatus("Type a place name or click the map to select coordinates.", "error");
+      return;
+    }
+
+    var coordinateMatch = query.match(
+      /^\s*(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+)?)\s*$/
+    );
+    if (coordinateMatch) {
+      var latitude = Number(coordinateMatch[1]);
+      var longitude = Number(coordinateMatch[2]);
+      if (latitude < IRELAND_BOUNDS[0][0] || latitude > IRELAND_BOUNDS[1][0] ||
+          longitude < IRELAND_BOUNDS[0][1] || longitude > IRELAND_BOUNDS[1][1]) {
+        showStatus("Those coordinates are outside the Ireland forecast region.", "error");
+        return;
+      }
+      setSelected("Custom location", latitude, longitude, true);
+      searchInput.value = coordinateText(latitude, longitude);
+      hideSearchResults();
+      resultsEl.style.display = "none";
+      showStatus("Coordinates selected. Click Generate forecast.", "");
+      return;
+    }
+
+    showStatus("Searching for \"" + query + "\"...", "loading");
+    fetch("/api/geocode?q=" + encodeURIComponent(query))
+      .then(function (response) {
+        return response.json().then(function (payload) {
+          if (!response.ok) {
+            throw new Error(payload.error || "geocoding search failed");
+          }
+          return payload;
+        });
+      })
+      .then(function (payload) {
+        var results = payload.results || [];
+        hideSearchResults();
+        if (results.length === 0) {
+          showStatus("No Ireland region results found for \"" + query + "\".", "error");
+          return;
+        }
+        showStatus("Found " + results.length + " result(s). Select one below.", "");
+        results.forEach(function (item) {
+          var li = document.createElement("li");
+          li.textContent = item.display_name || item.name;
+          li.addEventListener("click", function () {
+            setSelected(item.display_name || item.name, item.latitude, item.longitude, true);
+            searchInput.value = item.display_name || item.name;
+            hideSearchResults();
+            showStatus("Selected " + (item.display_name || item.name) + ".", "");
+          });
+          searchResultsEl.appendChild(li);
+        });
+        searchResultsEl.style.display = "block";
+      })
+      .catch(function (error) {
+        showStatus("Search error: " + error.message, "error");
+      });
+  }
+
+  searchButton.addEventListener("click", runSearch);
+  searchInput.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      runSearch();
+    }
+  });
+
+  clearButton.addEventListener("click", function () {
+    setSelected(WICKLOW_HEAD.name, WICKLOW_HEAD.lat, WICKLOW_HEAD.lon, true);
+    hideSearchResults();
+    searchInput.value = "";
+    resultsEl.style.display = "none";
+    locationPanelEl.open = true;
+    locationSummaryEl.textContent = "Location and forecast setup";
+    showStatus("Reset to Wicklow Head.", "");
+  });
+
+  locationPanelEl.addEventListener("toggle", function () {
+    if (locationPanelEl.open) {
+      window.setTimeout(function () { map.invalidateSize(); }, 50);
+    }
+  });
+
+  function openForecastSetup() {
+    locationPanelEl.open = true;
+    locationPanelEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(function () {
+      hoursInput.focus();
+      hoursInput.select();
+    }, 250);
+  }
+
+  changeForecastButton.addEventListener("click", openForecastSetup);
+  maxHoursButton.addEventListener("click", function () {
+    hoursInput.value = hoursInput.max;
+    hoursInput.focus();
+    hoursInput.select();
+  });
+
+  function scoreClass(score) {
+    if (score >= 8) { return "great"; }
+    if (score >= 6) { return "good"; }
+    if (score >= 4) { return "mixed"; }
+    return "poor";
+  }
+
+  function targetImagingScore(forecast, altitudeDegrees) {
+    var scores = forecast.scores || {};
+    var clouds = forecast.cloud_bands || {};
+    var seeingQuality = Math.max(
+      0,
+      Math.min(1, ((scores.seeing_score_1_10 || 1) - 1) / 9)
+    );
+    var altitudeQuality = Math.max(
+      0,
+      Math.min(1, (altitudeDegrees - 10) / 40)
+    );
+    var cloudQuality = Math.max(
+      0,
+      Math.min(1, (100 - (clouds.total_cloud_pct || 0)) / 100)
+    );
+    var opticalQuality = 0.65 * seeingQuality + 0.35 * altitudeQuality;
+    var usableQuality = opticalQuality * (0.15 + 0.85 * cloudQuality);
+    return Math.max(1, Math.min(10, Math.round(1 + 9 * usableQuality)));
+  }
+
+  function cloudCoverVisual(cloudPercent) {
+    var cloud = Math.max(0, Math.min(100, Math.round(cloudPercent)));
+    var label = cloud < 10 ? "Clear" :
+      cloud < 25 ? "Mostly clear" :
+      cloud < 45 ? "Partly cloudy" :
+      cloud < 70 ? "Mostly cloudy" :
+      cloud < 90 ? "Cloudy" : "Overcast";
+    var bandClass = cloud < 10 ? "clear" :
+      cloud < 25 ? "low" :
+      cloud < 45 ? "medium" :
+      cloud < 90 ? "high" : "overcast";
+    var stars = cloud < 25
+      ? "<circle class='weather-star' cx='35' cy='7' r='1.4'></circle>" +
+        "<circle class='weather-star' cx='43' cy='12' r='1'></circle>"
+      : "";
+    var scale = Math.min(1.08, 0.47 + cloud * 0.0061);
+    var translateX = (1 - scale) * 48;
+    var translateY = (1 - scale) * 27;
+    var frontTransform = "translate(" + translateX.toFixed(1) + " " +
+      translateY.toFixed(1) + ") scale(" + scale.toFixed(2) + ")";
+    var backCloud = cloud >= 45
+      ? "<path class='weather-cloud-back' d='M8 27h25c4 0 7-3 7-6s-3-6-7-6c-1-4-4-7-9-7-5 0-8 3-9 7-4 0-7 3-7 6s3 6 7 6z' " +
+        "opacity='" + Math.min(0.95, 0.35 + cloud / 150).toFixed(2) + "'></path>"
+      : "";
+    var overcastCloud = cloud >= 90
+      ? "<path class='weather-cloud-back' d='M3 32h47c5 0 8-3 8-7s-3-7-8-7c-2-6-7-10-14-10-6 0-11 3-13 8-2-1-4-2-7-2-6 0-11 4-11 9s4 9 10 9z' opacity='0.94'></path>"
+      : "";
+    var frontCloud = cloud >= 10
+      ? "<path class='weather-cloud-front' d='M20 31h27c5 0 8-3 8-7s-3-7-7-7c-1-5-5-8-10-8-6 0-10 4-11 9-4 0-8 3-8 7s3 6 7 6z' " +
+        "transform='" + frontTransform + "' opacity='" +
+        Math.min(1, 0.52 + cloud / 170).toFixed(2) + "'></path>"
+      : "";
+    return "<div class='cloud-visual cloud-band-" + bandClass +
+      "' title='" + label + ", " + cloud +
+      "% cloud' aria-label='" + label + ", " + cloud + "% cloud'>" +
+      "<svg viewBox='0 0 58 36' aria-hidden='true'>" +
+      "<path class='weather-moon' d='M17 4a12 12 0 1 0 9 20A10 10 0 0 1 17 4z'></path>" +
+      stars + backCloud + overcastCloud + frontCloud +
+      "</svg><span>" + cloud + "%</span></div>";
+  }
+
+  function formatLocalTime(isoText) {
+    var date = new Date(isoText);
+    var options = { weekday: "short", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" };
+    return date.toLocaleString("en-IE", options);
+  }
+
+  function formatEventTime(isoText) {
+    if (!isoText) { return "No event"; }
+    return new Date(isoText).toLocaleString("en-IE", {
+      timeZone: "Europe/Dublin",
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  function nextDateText(dateText) {
+    var date = new Date(dateText + "T00:00:00Z");
+    date.setUTCDate(date.getUTCDate() + 1);
+    return date.toISOString().slice(0, 10);
+  }
+
+  function minutesFromTimeText(timeText) {
+    var parts = timeText.split(":");
+    return Number(parts[0]) * 60 + Number(parts[1]);
+  }
+
+  function forecastsInAstroWindow(dateText, startText, endText) {
+    var startMinutes = minutesFromTimeText(startText);
+    var endMinutes = minutesFromTimeText(endText);
+    var followingDate = nextDateText(dateText);
+    return currentForecasts.filter(function (item) {
+      var localDate = item.local_time.slice(0, 10);
+      var localMinutes = minutesFromTimeText(item.local_time.slice(11, 16));
+      if (startMinutes <= endMinutes) {
+        return localDate === dateText &&
+          localMinutes >= startMinutes &&
+          localMinutes <= endMinutes;
+      }
+      return (localDate === dateText && localMinutes >= startMinutes) ||
+        (localDate === followingDate && localMinutes <= endMinutes);
+    });
+  }
+
+  function planetDetailText(bodyKey, details) {
+    var illuminated = Math.round((details.illuminated_fraction || 0) * 100);
+    if (bodyKey === "moon") {
+      return (details.phase_name || "Moon") + ", " + illuminated + "% lit";
+    }
+    return "Mag " + details.magnitude.toFixed(1) + ", " + illuminated + "% lit";
+  }
+
+  function planetImagePath(bodyKey) {
+    var version = bodyKey === "saturn" ? "?v=user-20260925" : "";
+    return "/assets/planet-" + bodyKey + ".webp" + version;
+  }
+
+  function seeingImagePath(bodyKey) {
+    if (bodyKey === "moon") {
+      return "/assets/seeing-moon-clavius.webp?v=user-20221003";
+    }
+    return planetImagePath(bodyKey);
+  }
+
+  function planetVisibilityRating(peakAltitude) {
+    if (peakAltitude === null) {
+      return { label: "NO IMAGING DATA", className: "hidden" };
+    }
+    if (peakAltitude >= 45) {
+      return { label: "HIGH IN SKY", className: "excellent" };
+    }
+    if (peakAltitude >= 25) {
+      return { label: "GOOD ALTITUDE", className: "good" };
+    }
+    if (peakAltitude > 0) {
+      return { label: "LOW ALTITUDE", className: "low" };
+    }
+    return { label: "NOT VISIBLE", className: "hidden" };
+  }
+
+  function renderAstronomy(selectedDate) {
+    selectedDate = selectedDate || selectedAstroDates()[0];
+    var day = currentAstronomy.days.find(function (item) {
+      return item.date === selectedDate;
+    });
+    astroBodyEl.innerHTML = "";
+    if (!day) {
+      astroSummaryEl.textContent = "No planetary details are available.";
+      return;
+    }
+
+    var windowForecasts = forecastsInAstroWindow(
+      selectedDate,
+      astroStartTimeInput.value,
+      astroEndTimeInput.value
+    );
+    var imagingForecasts = windowForecasts.filter(function (forecast) {
+      return forecast.scores && forecast.scores.light_state !== "daylight";
+    });
+    astroSummaryEl.textContent = "Cards use " + imagingForecasts.length +
+      " twilight or night imaging hour(s) from " + astroStartTimeInput.value + " to " +
+      astroEndTimeInput.value + ". Rise, meridian and set are exact daily events.";
+
+    var bodyCards = currentAstronomy.bodies.map(function (body) {
+      var details = day.bodies[body.key];
+      var highest = null;
+      var hoursAboveHorizon = 0;
+      imagingForecasts.forEach(function (forecast) {
+        var position = (forecast.body_positions || {})[body.key];
+        if (position && position.altitude_degrees > 0) {
+          hoursAboveHorizon += 1;
+        }
+        if (position && (!highest ||
+            position.altitude_degrees > highest.position.altitude_degrees)) {
+          highest = { position: position, localTime: forecast.local_time };
+        }
+      });
+
+      var peakAltitude = highest ? highest.position.altitude_degrees : null;
+      return {
+        body: body,
+        details: details,
+        highest: highest,
+        peakAltitude: peakAltitude,
+        hoursAboveHorizon: hoursAboveHorizon,
+      };
+    });
+
+    bodyCards.sort(function (left, right) {
+      if (left.body.key === "moon") { return -1; }
+      if (right.body.key === "moon") { return 1; }
+      return (right.peakAltitude === null ? -90 : right.peakAltitude) -
+        (left.peakAltitude === null ? -90 : left.peakAltitude);
+    });
+
+    bodyCards.forEach(function (entry) {
+      var rating = planetVisibilityRating(entry.peakAltitude);
+      var bestAltitude = entry.highest
+        ? entry.peakAltitude.toFixed(1) + "&deg;"
+        : "No data";
+      var bestTime = entry.highest
+        ? "Best at " + formatEventTime(entry.highest.localTime)
+        : "No twilight or night imaging hour in this window";
+      var coverage = entry.hoursAboveHorizon + " of " + imagingForecasts.length +
+        " selected imaging hour(s) above the horizon";
+      var altitudePercent = entry.peakAltitude === null
+        ? 0
+        : Math.max(0, Math.min(100, entry.peakAltitude / 90 * 100));
+      var card = document.createElement("article");
+      card.className = "astro-card";
+      card.innerHTML =
+        "<div class='astro-card-head'><div class='body-identity'>" +
+        "<span class='body-image-shell'><span class='body-fallback'>" +
+        entry.body.name.slice(0, 1) + "</span><img class='body-image' src='" +
+        planetImagePath(entry.body.key) + "' alt='' onerror='this.style.display=\"none\"'></span>" +
+        "<span class='body-name'>" + entry.body.name +
+        "</span></div><span class='visibility-pill " + rating.className + "'>" +
+        rating.label + "</span></div>" +
+        "<div class='astro-best'><div class='altitude'>" + bestAltitude +
+        "</div><div class='best-time'>" + bestTime + "</div></div>" +
+        "<div class='altitude-track'><span class='altitude-marker' style='left:calc(" +
+        altitudePercent.toFixed(1) + "% - 1px)'></span></div>" +
+        "<div class='altitude-scale'><span>Horizon</span><span>45&deg;</span><span>Zenith</span></div>" +
+        "<div class='astro-coverage'>" + coverage + "</div>" +
+        "<div class='astro-events'>" +
+        "<div class='astro-event'><span class='event-label'>Rise</span>" +
+        formatEventTime(entry.details.rise_local) + "</div>" +
+        "<div class='astro-event'><span class='event-label'>Meridian</span>" +
+        formatEventTime(entry.details.meridian_local) + "<br>" +
+        entry.details.culmination_altitude_degrees.toFixed(1) + "&deg;</div>" +
+        "<div class='astro-event'><span class='event-label'>Set</span>" +
+        formatEventTime(entry.details.set_local) + "</div></div>" +
+        "<div class='planet-detail' style='margin-top:10px;'>" +
+        planetDetailText(entry.body.key, entry.details) + "</div>";
+      astroBodyEl.appendChild(card);
+    });
+  }
+
+  var seeingScores = [2, 4, 6, 8, 10];
+  var seeingLabels = {
+    2: "Very poor",
+    4: "Unsettled",
+    6: "Fair",
+    8: "Very good, variable",
+    10: "Excellent",
+  };
+  function seeingRating(score) {
+    if (score <= 2) { return seeingLabels[2]; }
+    if (score <= 4) { return seeingLabels[4]; }
+    if (score <= 6) { return seeingLabels[6]; }
+    if (score <= 8) { return seeingLabels[8]; }
+    return seeingLabels[10];
+  }
+  var seeingArcsecLabels = {
+    2: "4.0 to 5.0 arcsec",
+    4: "2.5 to 3.0 arcsec",
+    6: "1.5 to 2.0 arcsec",
+    8: "0.7 to 1.0 arcsec",
+    10: "under 0.5 arcsec",
+  };
+  var seeingCanvases = [];
+  var seeingImage = null;
+  var seeingAnimationStarted = false;
+  var seeingSimulatorInitialised = false;
+  var reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function seeingImageSize(bodyKey) {
+    var sizes = {
+      moon: 94,
+      mercury: 76,
+      venus: 84,
+      mars: 88,
+      jupiter: 106,
+      saturn: 112,
+      uranus: 88,
+      neptune: 84,
+    };
+    return sizes[bodyKey] || 88;
+  }
+
+  function drawSeeingSample(canvas, score, elapsed) {
+    if (!seeingImage) { return; }
+    var context = canvas.getContext("2d");
+    var width = canvas.width;
+    var height = canvas.height;
+    var severity = (10 - score) / 8;
+    var turbulence = severity * severity;
+    var burstCycleMilliseconds = score === 8 ? 320 : 520;
+    var burstWave = (
+      Math.sin(elapsed / burstCycleMilliseconds + score * 0.7) + 1
+    ) / 2;
+    var intermittentBurst = Math.pow(burstWave, 8);
+    var effectiveTurbulence = score === 8
+      ? 0.01 + intermittentBurst * 0.16
+      : turbulence;
+    var jitter = 0.35 + effectiveTurbulence * 8.5;
+    var blur = 0.20 + effectiveTurbulence * 4.0;
+    var wobbleDegrees = 0.12 + effectiveTurbulence * 2.2;
+    var cycleMilliseconds = 190 - turbulence * 135;
+    var size = seeingImageSize(imagingTargetInput.value);
+    var pulseStrength = 0.002 + effectiveTurbulence * 0.04;
+    var pulse = 1 + pulseStrength * Math.sin(elapsed / 170 + score);
+    var drawSize = size * pulse;
+    var centreX = width / 2;
+    var centreY = height / 2;
+
+    context.clearRect(0, 0, width, height);
+    var background = context.createRadialGradient(
+      centreX, centreY, 4, centreX, centreY, width * 0.7
+    );
+    background.addColorStop(0, "#101a2c");
+    background.addColorStop(1, "#050811");
+    context.fillStyle = background;
+    context.fillRect(0, 0, width, height);
+
+    if (score === 8) {
+      var buffer = canvas._seeingBuffer;
+      if (!buffer) {
+        buffer = document.createElement("canvas");
+        buffer.width = width;
+        buffer.height = height;
+        canvas._seeingBuffer = buffer;
+      }
+      var bufferContext = buffer.getContext("2d");
+      bufferContext.clearRect(0, 0, width, height);
+      bufferContext.filter = "blur(" +
+        (0.14 + intermittentBurst * 0.22).toFixed(2) + "px)";
+
+      var stripCount = 10;
+      var imageTop = centreY - drawSize / 2;
+      var stripHeight = drawSize / stripCount;
+      var rippleStrength = 0.15 +
+        0.05 * Math.sin(elapsed / 500) +
+        intermittentBurst * 0.45;
+      for (var strip = 0; strip < stripCount; strip += 1) {
+        var stripTop = imageTop + strip * stripHeight;
+        var ripplePhase = elapsed / 180 + strip * 1.15;
+        var stripOffsetX = Math.sin(ripplePhase) * rippleStrength;
+        bufferContext.save();
+        bufferContext.beginPath();
+        bufferContext.rect(
+          0,
+          stripTop - 1,
+          width,
+          stripHeight + 2
+        );
+        bufferContext.clip();
+        bufferContext.drawImage(
+          seeingImage,
+          centreX - drawSize / 2 + stripOffsetX,
+          imageTop,
+          drawSize,
+          drawSize
+        );
+        bufferContext.restore();
+      }
+
+      context.save();
+      context.translate(
+        Math.sin(elapsed / 620) * 0.12,
+        Math.cos(elapsed / 710) * 0.08
+      );
+      context.drawImage(buffer, 0, 0);
+      context.restore();
+      return;
+    }
+
+    context.save();
+    context.filter = "blur(" + blur.toFixed(2) + "px)";
+    var copies = score <= 2
+      ? 8
+      : (score >= 9 ? 2 : 5);
+    for (var copy = 0; copy < copies; copy += 1) {
+      var phase = elapsed / (cycleMilliseconds + copy * 8) + copy * 1.7 + score;
+      var offsetX = Math.sin(phase) * jitter;
+      var offsetY = Math.cos(phase * 1.17) * jitter * 0.65;
+      var angle = Math.sin(phase * 0.83) * wobbleDegrees * Math.PI / 180;
+      context.globalAlpha = score <= 2
+        ? 0.115
+        : (copies === 2 ? 0.48 : 0.18);
+      context.save();
+      context.translate(centreX + offsetX, centreY + offsetY);
+      context.rotate(angle);
+      context.drawImage(
+        seeingImage,
+        -drawSize / 2,
+        -drawSize / 2,
+        drawSize,
+        drawSize
+      );
+      context.restore();
+    }
+    context.restore();
+  }
+
+  function animateSeeingSamples(timestamp) {
+    seeingCanvases.forEach(function (entry) {
+      drawSeeingSample(entry.canvas, entry.score, reducedMotion ? 0 : timestamp);
+    });
+    if (!reducedMotion) {
+      window.requestAnimationFrame(animateSeeingSamples);
+    }
+  }
+
+  function updateSeeingTargetPreview() {
+    var targetKey = imagingTargetInput.value;
+    var targetName = imagingTargetInput.options[
+      imagingTargetInput.selectedIndex
+    ].textContent;
+    seeingTargetNameEl.textContent = targetName;
+    seeingTargetImageEl.src = seeingImagePath(targetKey);
+  }
+
+  function loadSeeingBody() {
+    seeingImage = null;
+    var targetKey = imagingTargetInput.value;
+    updateSeeingTargetPreview();
+    var image = new Image();
+    image.onload = function () {
+      seeingImage = image;
+      if (reducedMotion) {
+        seeingCanvases.forEach(function (entry) {
+          drawSeeingSample(entry.canvas, entry.score, 0);
+        });
+        return;
+      }
+      if (!seeingAnimationStarted) {
+        seeingAnimationStarted = true;
+        window.requestAnimationFrame(animateSeeingSamples);
+      }
+    };
+    image.src = seeingImagePath(targetKey);
+  }
+
+  function initialiseSeeingSimulator() {
+    if (seeingSimulatorInitialised) { return; }
+    seeingSimulatorInitialised = true;
+    seeingSamplesEl.innerHTML = "";
+    seeingCanvases = seeingScores.map(function (score) {
+      var sample = document.createElement("div");
+      sample.className = "seeing-sample";
+      var canvas = document.createElement("canvas");
+      canvas.width = 180;
+      canvas.height = 108;
+      var label = document.createElement("div");
+      label.className = "seeing-sample-label";
+      label.innerHTML = "<strong>" + score + "/10</strong><span>" +
+        seeingLabels[score] + "</span><span>" +
+        seeingArcsecLabels[score] + "</span>";
+      sample.appendChild(canvas);
+      sample.appendChild(label);
+      seeingSamplesEl.appendChild(sample);
+      return { canvas: canvas, score: score };
+    });
+    loadSeeingBody();
+  }
+
+  seeingDetailsEl.addEventListener("toggle", function () {
+    if (seeingDetailsEl.open) {
+      initialiseSeeingSimulator();
+    }
+  });
+
+  function selectedAstroDates() {
+    return Array.from(
+      astroDateOptionsEl.querySelectorAll("input[type='checkbox']:checked")
+    ).map(function (input) {
+      return input.value;
+    });
+  }
+
+  function populateAstronomyDates() {
+    var previousInputs = Array.from(
+      astroDateOptionsEl.querySelectorAll("input[type='checkbox']")
+    );
+    var previousDates = new Set(
+      previousInputs.filter(function (input) { return input.checked; })
+        .map(function (input) { return input.value; })
+    );
+    var selectEveryAvailableNight = previousInputs.length === 0 ||
+      previousInputs.every(function (input) { return input.checked; });
+    astroDateOptionsEl.innerHTML = "";
+    var availableDays = currentAstronomy.days.filter(function (day) {
+      return forecastsInAstroWindow(
+        day.date,
+        astroStartTimeInput.value,
+        astroEndTimeInput.value
+      ).length > 0;
+    });
+    availableDays.forEach(function (day) {
+      var label = document.createElement("label");
+      label.className = "night-option";
+      var checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.value = day.date;
+      checkbox.checked = selectEveryAvailableNight || previousDates.has(day.date);
+      var text = document.createElement("span");
+      text.textContent = new Date(day.date + "T12:00:00Z").toLocaleDateString(
+        "en-IE",
+        { weekday: "long", day: "2-digit", month: "short" }
+      );
+      label.appendChild(checkbox);
+      label.appendChild(text);
+      astroDateOptionsEl.appendChild(label);
+    });
+    if (availableDays.length === 0) {
+      astroDateOptionsEl.innerHTML =
+        "<span class='muted'>No nights overlap these hours.</span>";
+    }
+  }
+
+  function populateAstronomy(report) {
+    currentAstronomy = report.astronomy || { bodies: [], days: [] };
+    astroDateOptionsEl.innerHTML = "";
+    populateAstronomyDates();
+  }
+
+  astroDateOptionsEl.addEventListener("change", renderPlanner);
+  selectAllNightsButton.addEventListener("click", function () {
+    astroDateOptionsEl.querySelectorAll("input[type='checkbox']").forEach(
+      function (input) { input.checked = true; }
+    );
+    renderPlanner();
+  });
+  clearNightsButton.addEventListener("click", function () {
+    astroDateOptionsEl.querySelectorAll("input[type='checkbox']").forEach(
+      function (input) { input.checked = false; }
+    );
+    renderPlanner();
+  });
+  [astroStartTimeInput, astroEndTimeInput].forEach(function (input) {
+    function updateAvailableNights() {
+      populateAstronomyDates();
+      renderPlanner();
+    }
+    input.addEventListener("input", updateAvailableNights);
+    input.addEventListener("change", updateAvailableNights);
+  });
+
+  function sortValue(item, key) {
+    var scores = item.scores || {};
+    var clouds = item.cloud_bands || {};
+    var values = {
+      local_time: Date.parse(item.local_time),
+      light_state: scores.light_state || "",
+      total_cloud_pct: clouds.total_cloud_pct,
+      low_cloud_pct: clouds.low_cloud_pct,
+      mid_cloud_pct: clouds.mid_cloud_pct,
+      high_cloud_pct: clouds.high_cloud_pct,
+      arcsec: item.display ? item.display.arcsec : null,
+      seeing_score: scores.seeing_score_1_10,
+      imaging_score: scores.imaging_score_1_10,
+      visibility_m: scores.visibility_m,
+      jet_speed: item.jet_stream ? item.jet_stream.speed_ms : null,
+    };
+    return values[key];
+  }
+
+  function updateSortHeaders() {
+    sortButtons.forEach(function (button) {
+      var active = button.dataset.sortKey === tableSort.key;
+      var header = button.closest("th");
+      var direction = button.querySelector(".sort-direction");
+      header.setAttribute("aria-sort", active
+        ? (tableSort.direction === "asc" ? "ascending" : "descending")
+        : "none");
+      direction.textContent = active ? "[" + tableSort.direction + "]" : "";
+    });
+  }
+
+  function optionalNumber(input) {
+    return input.value === "" ? null : Number(input.value);
+  }
+
+  function filteredForecasts() {
+    var light = filterLightInput.value;
+    var maxCloud = optionalNumber(filterMaxCloudInput);
+    var minSeeing = optionalNumber(filterMinSeeingInput);
+    var minImaging = optionalNumber(filterMinImagingInput);
+    return currentForecasts.filter(function (item) {
+      var scores = item.scores || {};
+      var clouds = item.cloud_bands || {};
+      var lightState = scores.light_state || "";
+      var lightMatches = !light ||
+        (light === "night" && lightState.indexOf("night") !== -1) ||
+        (light === "twilight" && lightState.indexOf("twilight") !== -1) ||
+        (light === "daylight" && lightState === "daylight");
+      return lightMatches &&
+        (maxCloud === null || clouds.total_cloud_pct <= maxCloud) &&
+        (minSeeing === null || scores.seeing_score_1_10 >= minSeeing) &&
+        (minImaging === null || scores.imaging_score_1_10 >= minImaging);
+    });
+  }
+
+  function sortedForecasts() {
+    var direction = tableSort.direction === "asc" ? 1 : -1;
+    return filteredForecasts().sort(function (a, b) {
+      var left = sortValue(a, tableSort.key);
+      var right = sortValue(b, tableSort.key);
+      var leftMissing = left === null || left === undefined || Number.isNaN(left);
+      var rightMissing = right === null || right === undefined || Number.isNaN(right);
+      if (leftMissing && rightMissing) {
+        return Date.parse(a.local_time) - Date.parse(b.local_time);
+      }
+      if (leftMissing) { return 1; }
+      if (rightMissing) { return -1; }
+      if (typeof left === "string") {
+        return left.localeCompare(String(right), "en-IE") * direction;
+      }
+      if (left < right) { return -1 * direction; }
+      if (left > right) { return direction; }
+      return Date.parse(a.local_time) - Date.parse(b.local_time);
+    });
+  }
+
+  function renderForecastRows() {
+    forecastBodyEl.innerHTML = "";
+    var visibleForecasts = sortedForecasts();
+    visibleForecasts.forEach(function (item) {
+      var scores = item.scores || {};
+      var clouds = item.cloud_bands || {};
+      var row = document.createElement("tr");
+      var visibilityText = (scores.visibility_m === null || scores.visibility_m === undefined)
+        ? "n/a"
+        : Math.round(scores.visibility_m / 1000) + " km";
+      row.innerHTML =
+        "<td>" + formatLocalTime(item.local_time) + "</td>" +
+        "<td>" + (scores.light_state || "") + "</td>" +
+        "<td>" + Math.round(clouds.total_cloud_pct) + "%</td>" +
+        "<td>" + Math.round(clouds.low_cloud_pct) + "%</td>" +
+        "<td>" + Math.round(clouds.mid_cloud_pct) + "%</td>" +
+        "<td>" + Math.round(clouds.high_cloud_pct) + "%</td>" +
+        "<td>" + item.display.arcsec.toFixed(2) + "</td>" +
+        "<td><span class='score " + scoreClass(scores.seeing_score_1_10) + "'>" + scores.seeing_score_1_10 + "</span></td>" +
+        "<td><span class='score " + scoreClass(scores.imaging_score_1_10) + "'>" + scores.imaging_score_1_10 + "</span></td>" +
+        "<td>" + visibilityText + "</td>" +
+        "<td>" + Math.round(item.jet_stream.speed_ms) + " m/s</td>";
+      forecastBodyEl.appendChild(row);
+    });
+    if (visibleForecasts.length === 0 && currentForecasts.length > 0) {
+      var emptyRow = document.createElement("tr");
+      emptyRow.innerHTML = "<td colspan='11'>No hourly forecasts match the selected filters.</td>";
+      forecastBodyEl.appendChild(emptyRow);
+    }
+    filterSummaryEl.textContent = "Showing " + visibleForecasts.length + " of " +
+      currentForecasts.length + " hourly forecasts.";
+    updateSortHeaders();
+  }
+
+  [
+    filterLightInput,
+    filterMaxCloudInput,
+    filterMinSeeingInput,
+    filterMinImagingInput,
+  ].forEach(function (input) {
+    input.addEventListener("input", renderForecastRows);
+    input.addEventListener("change", renderForecastRows);
+  });
+
+  resetFiltersButton.addEventListener("click", function () {
+    filterLightInput.value = "";
+    filterMaxCloudInput.value = "";
+    filterMinSeeingInput.value = "";
+    filterMinImagingInput.value = "";
+    renderForecastRows();
+  });
+
+  sortButtons.forEach(function (button) {
+    button.addEventListener("click", function () {
+      var key = button.dataset.sortKey;
+      if (tableSort.key === key) {
+        tableSort.direction = tableSort.direction === "asc" ? "desc" : "asc";
+      } else {
+        tableSort = { key: key, direction: "asc" };
+      }
+      renderForecastRows();
+    });
+  });
+
+  function average(values) {
+    if (values.length === 0) { return 0; }
+    return values.reduce(function (total, value) {
+      return total + value;
+    }, 0) / values.length;
+  }
+
+  function formatSessionDate(value) {
+    return value.toLocaleDateString(
+      "en-IE",
+      { weekday: "short", day: "2-digit", month: "short" }
+    );
+  }
+
+  function formatSessionTime(value) {
+    return value.toLocaleTimeString(
+      "en-IE",
+      { hour: "2-digit", minute: "2-digit" }
+    );
+  }
+
+  function formatSessionRange(session) {
+    var start = new Date(session.start.forecast.local_time);
+    var end = new Date(session.end.forecast.local_time);
+    end.setHours(end.getHours() + 1);
+    if (start.toDateString() === end.toDateString()) {
+      return formatSessionTime(start) + " to " + formatSessionTime(end);
+    }
+    return formatSessionTime(start) + " to " +
+      end.toLocaleDateString("en-IE", { weekday: "short" }) + " " +
+      formatSessionTime(end);
+  }
+
+  function forecastEntriesInSelectedAstroWindows() {
+    var entries = [];
+    selectedAstroDates().forEach(function (nightDate) {
+      forecastsInAstroWindow(
+        nightDate,
+        astroStartTimeInput.value,
+        astroEndTimeInput.value
+      ).forEach(function (forecast) {
+        entries.push({ forecast: forecast, nightDate: nightDate });
+      });
+    });
+    return entries;
+  }
+
+  function buildImagingSessions() {
+    var targetKey = imagingTargetInput.value;
+    var candidates = forecastEntriesInSelectedAstroWindows()
+      .filter(function (entry) {
+        var item = entry.forecast;
+        var position = (item.body_positions || {})[targetKey];
+        return item.scores &&
+          item.scores.light_state !== "daylight" &&
+          position &&
+          position.altitude_degrees >= 10;
+      })
+      .map(function (entry) {
+        var item = entry.forecast;
+        var position = item.body_positions[targetKey];
+        return {
+          forecast: item,
+          nightDate: entry.nightDate,
+          altitude: position.altitude_degrees,
+          imagingScore: targetImagingScore(item, position.altitude_degrees),
+        };
+      })
+      .sort(function (a, b) {
+        return Date.parse(a.forecast.local_time) - Date.parse(b.forecast.local_time);
+      });
+
+    var grouped = [];
+    var current = [];
+    candidates.forEach(function (entry) {
+      if (current.length > 0) {
+        var previousTime = Date.parse(current[current.length - 1].forecast.local_time);
+        var currentTime = Date.parse(entry.forecast.local_time);
+        if (currentTime - previousTime > 90 * 60 * 1000) {
+          grouped.push(current);
+          current = [];
+        }
+      }
+      current.push(entry);
+    });
+    if (current.length > 0) {
+      grouped.push(current);
+    }
+
+    var sessionWindows = [];
+    grouped.forEach(function (entries) {
+      entries.forEach(function (entry) {
+        sessionWindows.push([entry]);
+      });
+      for (var index = 0; index < entries.length - 1; index += 1) {
+        sessionWindows.push(entries.slice(index, index + 2));
+      }
+    });
+
+    return sessionWindows.map(function (entries) {
+      var best = entries.reduce(function (currentBest, entry) {
+        if (!currentBest || entry.imagingScore > currentBest.imagingScore) {
+          return entry;
+        }
+        if (entry.imagingScore === currentBest.imagingScore &&
+            entry.altitude > currentBest.altitude) {
+          return entry;
+        }
+        return currentBest;
+      }, null);
+      return {
+        entries: entries,
+        start: entries[0],
+        end: entries[entries.length - 1],
+        best: best,
+        score: Math.max(1, Math.min(10, Math.round(average(
+          entries.map(function (entry) { return entry.imagingScore; })
+        )))),
+        averageCloud: average(entries.map(function (entry) {
+          return entry.forecast.cloud_bands.total_cloud_pct;
+        })),
+        nightDate: entries[0].nightDate,
+        peakAltitude: Math.max.apply(null, entries.map(function (entry) {
+          return entry.altitude;
+        })),
+        durationHours: entries.length,
+      };
+    }).sort(function (a, b) {
+      var scoreDiff = b.score - a.score;
+      if (scoreDiff !== 0) { return scoreDiff; }
+      var cloudDiff = a.averageCloud - b.averageCloud;
+      if (cloudDiff !== 0) { return cloudDiff; }
+      return b.peakAltitude - a.peakAltitude;
+    });
+  }
+
+  function sessionColour(score) {
+    return score >= 8 ? "#36a269" :
+      score >= 6 ? "#73a83b" :
+      score >= 4 ? "#c29636" : "#b05252";
+  }
+
+  function selectedTargetDetails(nightDate) {
+    var day = currentAstronomy.days.find(function (item) {
+      return item.date === nightDate;
+    });
+    return day ? day.bodies[imagingTargetInput.value] : null;
+  }
+
+  function renderPrimarySession(session, targetName) {
+    if (!session) {
+      primaryWindowEl.innerHTML =
+        "<div class='card'>No viable " + targetName +
+        " imaging session is available across the selected nights.</div>";
+      return;
+    }
+    var score = session.score;
+    var colour = sessionColour(score);
+    var best = session.best.forecast;
+    var details = selectedTargetDetails(session.nightDate);
+    var recommendationLabel = score >= 4
+      ? "Top " + targetName + " session across selected nights"
+      : "Poor conditions: strongest " + targetName +
+        " session across selected nights";
+    primaryWindowEl.style.setProperty("--window-colour", colour);
+    primaryWindowEl.innerHTML =
+      "<article class='primary-window' style='--window-colour:" + colour +
+      "'><div class='window-card-top'><div class='primary-window-title'>" +
+      recommendationLabel + "</div>" +
+      cloudCoverVisual(session.averageCloud) + "</div>" +
+      "<div class='primary-window-grid'><div class='score-ring' style='--window-progress:" +
+      (score * 10) + "%;--window-colour:" + colour +
+      "'><strong>" + score + "/10</strong></div>" +
+      "<div><div class='primary-window-date'>" +
+      formatSessionDate(new Date(session.start.forecast.local_time)) +
+      "</div><div class='primary-window-time'>" + formatSessionRange(session) +
+      "</div><div class='primary-window-duration'>" +
+      session.durationHours + " hour" +
+      (session.durationHours === 1 ? "" : "s") + "</div></div>" +
+      "<div class='window-metrics'>" +
+      "<div class='window-metric'><span>Best seeing</span><strong class='seeing-rating'>" +
+      seeingRating(best.scores.seeing_score_1_10) +
+      " <span class='seeing-score'>(" + best.scores.seeing_score_1_10 +
+      "/10)</span></strong><div class='seeing-detail'>" +
+      best.display.arcsec.toFixed(2) + " arcsec</div></div>" +
+      "<div class='window-metric'><span>Peak " + targetName +
+      " elevation</span><strong>" + session.peakAltitude.toFixed(1) +
+      "&deg;</strong></div>" +
+      "<div class='window-metric'><span>Average cloud</span><strong>" +
+      Math.round(session.averageCloud) + "%</strong></div>" +
+      "<div class='window-metric'><span>Best hour</span><strong>" +
+      formatSessionTime(new Date(best.local_time)) + "</strong></div></div></div>" +
+      (details ? "<div class='astro-events'>" +
+        "<div class='astro-event'><span class='event-label'>Rise</span>" +
+        formatEventTime(details.rise_local) + "</div>" +
+        "<div class='astro-event'><span class='event-label'>Meridian</span>" +
+        formatEventTime(details.meridian_local) + "<br>" +
+        details.culmination_altitude_degrees.toFixed(1) + "&deg;</div>" +
+        "<div class='astro-event'><span class='event-label'>Set</span>" +
+        formatEventTime(details.set_local) + "</div></div>" : "") +
+      "<div class='primary-reason'>Ranks first because " + targetName +
+      " reaches " + session.peakAltitude.toFixed(0) +
+      "&deg;, average cloud is " + Math.round(session.averageCloud) +
+      "%, and the best seeing is " +
+      seeingRating(best.scores.seeing_score_1_10).toLowerCase() +
+      " (" + best.scores.seeing_score_1_10 + "/10).</div></article>";
+  }
+
+  function renderAlternativeSessions(sessions, targetName) {
+    cardsEl.innerHTML = "";
+    if (sessions.length === 0) {
+      cardsEl.innerHTML =
+        "<div class='card'>No additional viable sessions in this window.</div>";
+      return;
+    }
+    sessions.slice(0, 3).forEach(function (session, index) {
+        var item = session.best.forecast;
+        var score = session.score;
+        var colour = sessionColour(score);
+        var card = document.createElement("div");
+        card.className = "card window-card";
+        card.style.setProperty("--window-score", String(score));
+        card.style.setProperty("--window-progress", String(score * 10) + "%");
+        card.style.setProperty("--window-colour", colour);
+        card.innerHTML =
+          "<div class='window-card-top'><div class='window-rank'>" + targetName +
+          " alternative " + (index + 1) + "</div>" +
+          cloudCoverVisual(session.averageCloud) + "</div>" +
+          "<div class='window-main'><div class='score-ring'><strong>" + score +
+          "/10</strong></div><div><div class='window-date'>" +
+          formatSessionDate(new Date(session.start.forecast.local_time)) +
+          "</div><div class='window-time'>" + formatSessionRange(session) +
+          "</div></div></div>" +
+          "<div class='window-metrics'>" +
+          "<div class='window-metric'><span>Seeing</span>" +
+          "<strong class='seeing-rating'>" +
+          seeingRating(item.scores.seeing_score_1_10) +
+          " <span class='seeing-score'>(" +
+          item.scores.seeing_score_1_10 + "/10)</span></strong>" +
+          "<div class='seeing-detail'>" +
+          item.display.arcsec.toFixed(2) + " arcsec</div></div>" +
+          "<div class='window-metric'><span>Peak " + targetName +
+          " elevation</span><strong>" + session.peakAltitude.toFixed(1) +
+          "&deg;</strong></div>" +
+          "<div class='window-metric'><span>Average cloud</span><strong>" +
+          Math.round(session.averageCloud) + "%</strong></div>" +
+          "<div class='window-metric'><span>Duration</span><strong>" +
+          session.durationHours + " hour" +
+          (session.durationHours === 1 ? "" : "s") + "</strong></div></div>";
+        cardsEl.appendChild(card);
+    });
+  }
+
+  function drawImagingTimeline(primarySession) {
+    var targetKey = imagingTargetInput.value;
+    var targetName = imagingTargetInput.options[
+      imagingTargetInput.selectedIndex
+    ].textContent;
+    var timelineDate = primarySession ?
+      primarySession.nightDate : selectedAstroDates()[0];
+    var entries = (timelineDate ? forecastsInAstroWindow(
+      timelineDate,
+      astroStartTimeInput.value,
+      astroEndTimeInput.value
+    ) : []).filter(function (forecast) {
+      return forecast.scores &&
+        forecast.scores.light_state !== "daylight" &&
+        (forecast.body_positions || {})[targetKey];
+    });
+    var context = imagingTimelineEl.getContext("2d");
+    var pixelRatio = window.devicePixelRatio || 1;
+    var width = Math.max(640, imagingTimelineEl.clientWidth || 1000);
+    var height = 360;
+    imagingTimelineEl.width = Math.floor(width * pixelRatio);
+    imagingTimelineEl.height = Math.floor(height * pixelRatio);
+    context.scale(pixelRatio, pixelRatio);
+    context.clearRect(0, 0, width, height);
+
+    var timelineDateLabel = timelineDate ?
+      new Date(timelineDate + "T12:00:00Z").toLocaleDateString(
+        "en-IE",
+        { weekday: "long", day: "2-digit", month: "short" }
+      ) : "selected night";
+    timelineTitleEl.textContent = "Conditions for night beginning " +
+      timelineDateLabel;
+
+    if (entries.length === 0) {
+      context.fillStyle = "#9aa8bd";
+      context.font = "13px Segoe UI";
+      context.fillText("No timeline data for the selected nights.", 18, 36);
+      timelineSummaryEl.textContent = "No target data is available.";
+      return;
+    }
+
+    var left = 102;
+    var right = width - 58;
+    var plotWidth = right - left;
+    var step = entries.length === 1 ? plotWidth : plotWidth / (entries.length - 1);
+    var lanes = [
+      {
+        label: "Elevation",
+        unit: "degrees",
+        colour: "#55c2ff",
+        top: 30,
+        bottom: 105,
+        minimum: 0,
+        maximum: 90,
+        ticks: [0, 45, 90],
+        formatter: function (value) { return value + "\u00b0"; },
+      },
+      {
+        label: "Seeing",
+        unit: "10 is best",
+        colour: "#e2b84f",
+        top: 126,
+        bottom: 201,
+        minimum: 1,
+        maximum: 10,
+        ticks: [1, 5, 10],
+        formatter: function (value) { return value + "/10"; },
+      },
+      {
+        label: "Cloud",
+        unit: "lower is better",
+        colour: "#8491a6",
+        top: 222,
+        bottom: 297,
+        minimum: 0,
+        maximum: 100,
+        ticks: [0, 50, 100],
+        formatter: function (value) { return value + "%"; },
+      },
+    ];
+
+    function laneY(lane, value) {
+      var clamped = Math.max(lane.minimum, Math.min(lane.maximum, value));
+      return lane.bottom -
+        (clamped - lane.minimum) / (lane.maximum - lane.minimum) *
+        (lane.bottom - lane.top);
+    }
+
+    lanes.forEach(function (lane) {
+      context.fillStyle = "rgba(15,23,40,0.72)";
+      context.fillRect(left, lane.top, plotWidth, lane.bottom - lane.top);
+      context.font = "600 12px Segoe UI";
+      context.textAlign = "left";
+      context.textBaseline = "middle";
+      context.fillStyle = lane.colour;
+      context.fillText(lane.label, 8, (lane.top + lane.bottom) / 2 - 8);
+      context.font = "10px Segoe UI";
+      context.fillStyle = "#7f8da4";
+      context.fillText(lane.unit, 8, (lane.top + lane.bottom) / 2 + 9);
+      lane.ticks.forEach(function (tick) {
+        var y = laneY(lane, tick);
+        context.strokeStyle = "#26334a";
+        context.lineWidth = 1;
+        context.beginPath();
+        context.moveTo(left, y);
+        context.lineTo(right, y);
+        context.stroke();
+        context.textAlign = "right";
+        context.fillStyle = "#7f8da4";
+        context.fillText(lane.formatter(tick), left - 8, y);
+      });
+    });
+
+    if (primarySession) {
+      var sessionStart = Date.parse(primarySession.start.forecast.local_time);
+      var sessionEnd = Date.parse(primarySession.end.forecast.local_time);
+      var startIndex = entries.findIndex(function (forecast) {
+        return Date.parse(forecast.local_time) === sessionStart;
+      });
+      var endIndex = entries.findIndex(function (forecast) {
+        return Date.parse(forecast.local_time) === sessionEnd;
+      });
+      if (startIndex >= 0 && endIndex >= 0) {
+        var highlightLeft = Math.max(
+          left,
+          left + startIndex * step - step * 0.45
+        );
+        var highlightRight = Math.min(
+          right,
+          left + endIndex * step + step * 0.45
+        );
+        context.fillStyle = "rgba(54,162,105,0.12)";
+        context.fillRect(
+          highlightLeft,
+          lanes[0].top,
+          Math.max(8, highlightRight - highlightLeft),
+          lanes[2].bottom - lanes[0].top
+        );
+        context.fillStyle = "#75c99a";
+        context.font = "10px Segoe UI";
+        context.textAlign = "left";
+        var highlightLabel = "Top: " + formatSessionRange(primarySession);
+        var highlightLabelWidth = context.measureText(highlightLabel).width;
+        var highlightLabelX = Math.max(
+          left,
+          Math.min(
+            right - highlightLabelWidth,
+            (highlightLeft + highlightRight - highlightLabelWidth) / 2
+          )
+        );
+        context.fillText(highlightLabel, highlightLabelX, 18);
+      }
+    }
+
+    function drawLine(lane, values) {
+      context.strokeStyle = lane.colour;
+      context.lineWidth = 2.5;
+      context.lineJoin = "round";
+      context.beginPath();
+      values.forEach(function (value, index) {
+        var x = left + index * step;
+        var y = laneY(lane, value);
+        if (index === 0) { context.moveTo(x, y); }
+        else { context.lineTo(x, y); }
+      });
+      context.stroke();
+      values.forEach(function (value, index) {
+        var x = left + index * step;
+        var y = laneY(lane, value);
+        context.fillStyle = lane.colour;
+        context.beginPath();
+        context.arc(x, y, 2.2, 0, Math.PI * 2);
+        context.fill();
+      });
+    }
+
+    var elevations = entries.map(function (forecast) {
+      return Math.max(0, forecast.body_positions[targetKey].altitude_degrees);
+    });
+    var seeingScoresForTimeline = entries.map(function (forecast) {
+      return forecast.scores.seeing_score_1_10;
+    });
+    var cloudValues = entries.map(function (forecast) {
+      return forecast.cloud_bands.total_cloud_pct;
+    });
+    drawLine(lanes[0], elevations);
+    drawLine(lanes[1], seeingScoresForTimeline);
+    entries.forEach(function (forecast, index) {
+      var x = left + index * step;
+      var cloud = cloudValues[index];
+      var y = laneY(lanes[2], cloud);
+      var barWidth = Math.max(5, plotWidth / entries.length * 0.58);
+      context.fillStyle = "rgba(132,145,166,0.58)";
+      context.fillRect(
+        x - barWidth / 2,
+        y,
+        barWidth,
+        lanes[2].bottom - y
+      );
+    });
+
+    context.fillStyle = "#9aa8bd";
+    context.textAlign = "center";
+    context.textBaseline = "top";
+    var labelStep = Math.max(1, Math.ceil(entries.length / 6));
+    entries.forEach(function (forecast, index) {
+      if (index % labelStep !== 0 && index !== entries.length - 1) { return; }
+      var forecastDate = new Date(forecast.local_time);
+      context.fillText(
+        forecastDate.toLocaleDateString("en-IE", { weekday: "short" }) +
+          " " + formatSessionTime(forecastDate),
+        left + index * step,
+        lanes[2].bottom + 10
+      );
+    });
+    timelineSummaryEl.textContent = "The top-ranked session is highlighted. " +
+      targetName + " peaks at " +
+      Math.max.apply(null, elevations).toFixed(1) +
+      " degrees; seeing ranges from " +
+      Math.min.apply(null, seeingScoresForTimeline) + "/10 to " +
+      Math.max.apply(null, seeingScoresForTimeline) +
+      "/10; cloud ranges from " +
+      Math.round(Math.min.apply(null, cloudValues)) + "% to " +
+      Math.round(Math.max.apply(null, cloudValues)) + "%.";
+  }
+
+  function renderPlanner() {
+    var targetName = imagingTargetInput.options[
+      imagingTargetInput.selectedIndex
+    ].textContent;
+    var selectedDates = selectedAstroDates();
+    if (selectedDates.length === 0) {
+      primaryWindowEl.innerHTML =
+        "<div class='card'>Select at least one forecast night to compare.</div>";
+      cardsEl.innerHTML =
+        "<div class='card'>Select one or more nights to see alternatives.</div>";
+      renderAstronomy();
+      drawImagingTimeline(null);
+      return;
+    }
+    var sessions = buildImagingSessions();
+    var primarySession = sessions[0] || null;
+    renderAstronomy(primarySession ? primarySession.nightDate : selectedDates[0]);
+    renderPrimarySession(primarySession, targetName);
+    renderAlternativeSessions(sessions.slice(1), targetName);
+    drawImagingTimeline(primarySession);
+  }
+
+  imagingTargetInput.addEventListener("change", function () {
+    renderPlanner();
+    updateSeeingTargetPreview();
+    if (seeingSimulatorInitialised) {
+      loadSeeingBody();
+    }
+  });
+  window.addEventListener("resize", function () {
+    if (currentForecasts.length > 0) {
+      var sessions = buildImagingSessions();
+      drawImagingTimeline(sessions[0] || null);
+    }
+  });
+
+  function renderReport(report) {
+    var forecasts = report.forecasts || [];
+    currentForecasts = forecasts.slice();
+    populateAstronomy(report);
+    tableSort = { key: "local_time", direction: "asc" };
+    renderForecastRows();
+    resultsEl.style.display = "block";
+    renderPlanner();
+    locationSummaryEl.textContent = selected.name + ", " +
+      report.forecast_hours + " forecast hours. Select to edit.";
+    locationPanelEl.open = false;
+  }
+
+  function generateForecast() {
+    var hours = parseInt(hoursInput.value, 10);
+    if (!hours || hours < 1 || hours > 120) {
+      showStatus("Hours must be a whole number between 1 and 120.", "error");
+      return;
+    }
+    generateButton.disabled = true;
+    showStatus("Fetching UKV forecast for " + selected.name + "...", "loading");
+    resultsEl.style.display = "none";
+
+    var params = new URLSearchParams({
+      lat: String(selected.lat),
+      lon: String(selected.lon),
+      name: selected.name,
+      hours: String(hours),
+    });
+
+    fetch("/api/forecast?" + params.toString())
+      .then(function (response) {
+        return response.json().then(function (payload) {
+          if (!response.ok) {
+            throw new Error(payload.error || "forecast request failed");
+          }
+          return payload;
+        });
+      })
+      .then(function (report) {
+        renderReport(report);
+        showStatus("Forecast ready: " + report.forecast_hours + " hours from " +
+          (report.source ? report.source.model : "UKV") + ".", "");
+      })
+      .catch(function (error) {
+        fetch("/api/health", { cache: "no-store" })
+          .then(function (response) {
+            if (!response.ok) {
+              throw new Error("health check failed");
+            }
+            showStatus("Forecast error: " + error.message, "error");
+          })
+          .catch(function () {
+            showStatus(
+              "The local forecast server has stopped. Double-click " +
+              "Open-Ireland-Forecast.cmd again, then retry.",
+              "error"
+            );
+          });
+      })
+      .finally(function () {
+        generateButton.disabled = false;
+      });
+  }
+
+  generateButton.addEventListener("click", generateForecast);
+
+  updateSelectedDisplay();
+})();
+</script>
+</body>
+</html>

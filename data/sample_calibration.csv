@@ -1,0 +1,13 @@
+case_id,site_elevation_m_asl,altitude_m_asl,pressure_hpa,temperature_c,relative_humidity_pct,wind_u_ms,wind_v_ms,cloud_cover_pct,wavelength_nm,observed_seeing1_arcsec,observed_seeing2_arcsec,observed_arcsec
+case_a,500,500,950,18.0,55,2,1,20,500,1.2,1.1,1.3
+case_a,500,1500,850,11.5,50,6,3,10,,,,
+case_a,500,3000,700,2.0,40,12,6,0,,,,
+case_a,500,4000,620,8.0,25,20,10,0,,,,
+case_a,500,5000,540,10.0,20,28,13,0,,,,
+case_a,500,7000,410,-8.0,15,38,16,0,,,,
+case_b,150,150,1000,20.0,60,1,0,30,500,0.7,0.8,0.75
+case_b,150,1200,880,13.0,55,4,2,15,,,,
+case_b,150,2500,760,5.0,45,8,4,5,,,,
+case_b,150,4200,610,-4.0,25,14,7,0,,,,
+case_b,150,6500,440,-20.0,15,22,10,0,,,,
+case_b,150,9000,300,-40.0,10,30,14,0,,,,

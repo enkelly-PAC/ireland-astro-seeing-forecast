@@ -1,0 +1,4 @@
+valid_time_utc,low_cloud_pct,mid_cloud_pct,high_cloud_pct,total_cloud_pct
+2026-09-27T21:00:00Z,12,8,18,30
+2026-09-27T22:00:00Z,8,5,12,21
+2026-09-27T23:00:00Z,5,4,9,16
