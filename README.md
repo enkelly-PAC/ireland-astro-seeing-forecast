@@ -364,6 +364,31 @@ double-click:
 Stop-Ireland-Forecast.cmd
 ```
 
+## GitHub Pages frontend
+
+The `docs` directory contains a static, project-page-safe frontend for
+GitHub Pages. Build it from the application source with:
+
+```powershell
+python scripts\build_pages.py
+```
+
+Until a hosted Python API is available, the Pages build displays the map and
+interface but blocks place search and forecast generation with a clear
+configuration message.
+
+After deploying the API, rebuild with its HTTPS origin:
+
+```powershell
+python scripts\build_pages.py `
+  --api-base "https://your-forecast-api.example"
+```
+
+Then commit the regenerated `docs` directory and configure GitHub Pages to
+publish from the `main` branch and `/docs` folder. The build uses relative
+asset paths so it works below a project URL such as
+`https://enkelly-pac.github.io/ireland-astro-seeing-forecast/`.
+
 The server exposes two JSON API endpoints used by the browser UI:
 
 ```
