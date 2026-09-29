@@ -2096,6 +2096,14 @@
     lanes.forEach(function (lane) {
       context.fillStyle = "rgba(15,23,40,0.72)";
       context.fillRect(left, lane.top, plotWidth, lane.bottom - lane.top);
+      context.strokeStyle = "rgba(69,86,116,0.72)";
+      context.lineWidth = 1;
+      context.strokeRect(
+        left + 0.5,
+        lane.top + 0.5,
+        plotWidth - 1,
+        lane.bottom - lane.top - 1
+      );
       context.font = "600 12px Segoe UI";
       context.textAlign = "left";
       context.textBaseline = "middle";
@@ -2116,6 +2124,16 @@
         context.fillStyle = "#7f8da4";
         context.fillText(lane.formatter(tick), left - 8, y);
       });
+    });
+
+    lanes.slice(0, -1).forEach(function (lane, index) {
+      var separatorY = (lane.bottom + lanes[index + 1].top) / 2;
+      context.strokeStyle = "rgba(105,126,160,0.78)";
+      context.lineWidth = 1.5;
+      context.beginPath();
+      context.moveTo(8, separatorY);
+      context.lineTo(right, separatorY);
+      context.stroke();
     });
 
     if (primarySession) {
@@ -2192,19 +2210,19 @@
     });
     drawLine(lanes[0], elevations);
     drawLine(lanes[1], seeingScoresForTimeline);
-    entries.forEach(function (forecast, index) {
-      var x = left + index * step;
-      var cloud = cloudValues[index];
-      var y = laneY(lanes[2], cloud);
-      var barWidth = Math.max(5, plotWidth / entries.length * 0.58);
-      context.fillStyle = "rgba(132,145,166,0.58)";
-      context.fillRect(
-        x - barWidth / 2,
-        y,
-        barWidth,
-        lanes[2].bottom - y
+    context.beginPath();
+    context.moveTo(left, lanes[2].bottom);
+    cloudValues.forEach(function (cloud, index) {
+      context.lineTo(
+        left + index * step,
+        laneY(lanes[2], cloud)
       );
     });
+    context.lineTo(right, lanes[2].bottom);
+    context.closePath();
+    context.fillStyle = "rgba(132,145,166,0.18)";
+    context.fill();
+    drawLine(lanes[2], cloudValues);
 
     context.fillStyle = "#9aa8bd";
     context.textAlign = "center";
