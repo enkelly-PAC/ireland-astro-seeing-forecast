@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="astro-api-base" content="">
 <meta name="astro-hosting-mode" content="local">
-<title>Ireland Astro Seeing Forecast</title>
+<title>British Isles Astro Seeing Forecast</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
   integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
@@ -591,12 +591,13 @@
 </head>
 <body>
 <main>
-  <h1>Ireland Astro Seeing Forecast</h1>
+  <h1>British Isles Astro Seeing Forecast</h1>
   <div class="muted">
-    Click the map or search for a place anywhere in Ireland (Republic of Ireland
-    and Northern Ireland), then generate a rolling UK Met Office hourly
-    forecast. UKV 2 km is used near term, with UKMO Global extending the
-    forecast to four complete days.
+    Click the map or search for a place anywhere in the British Isles (Great
+    Britain, Ireland, Northern Ireland, the Isle of Man, the Channel Islands,
+    the Hebrides, Orkney, Shetland and surrounding islands), then generate a
+    rolling UK Met Office hourly forecast. UKV 2 km is used near term, with
+    UKMO Global extending the forecast to four complete days.
   </div>
 
   <details id="location-panel" class="setup-details" open>
@@ -835,7 +836,7 @@
 (function () {
   "use strict";
 
-  var IRELAND_BOUNDS = [[51.0, -11.5], [55.6, -5.0]];
+  var BRITISH_ISLES_BOUNDS = [[49.0, -11.5], [61.0, 2.0]];
   var WICKLOW_HEAD = { name: "Wicklow Head, County Wicklow, Ireland", lat: 52.96544, lon: -6.00233 };
   var API_BASE_URL = (
     document.querySelector('meta[name="astro-api-base"]').content || ""
@@ -860,9 +861,9 @@
   }
 
   var map = L.map("map", {
-    maxBounds: L.latLngBounds(IRELAND_BOUNDS).pad(0.15),
-    minZoom: 6,
-  }).setView([53.4, -8.0], 6);
+    maxBounds: L.latLngBounds(BRITISH_ISLES_BOUNDS).pad(0.15),
+    minZoom: 5,
+  }).fitBounds(L.latLngBounds(BRITISH_ISLES_BOUNDS));
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 18,
@@ -974,9 +975,9 @@
     if (coordinateMatch) {
       var latitude = Number(coordinateMatch[1]);
       var longitude = Number(coordinateMatch[2]);
-      if (latitude < IRELAND_BOUNDS[0][0] || latitude > IRELAND_BOUNDS[1][0] ||
-          longitude < IRELAND_BOUNDS[0][1] || longitude > IRELAND_BOUNDS[1][1]) {
-        showStatus("Those coordinates are outside the Ireland forecast region.", "error");
+      if (latitude < BRITISH_ISLES_BOUNDS[0][0] || latitude > BRITISH_ISLES_BOUNDS[1][0] ||
+          longitude < BRITISH_ISLES_BOUNDS[0][1] || longitude > BRITISH_ISLES_BOUNDS[1][1]) {
+        showStatus("Those coordinates are outside the British Isles forecast region.", "error");
         return;
       }
       setSelected("Custom location", latitude, longitude, true);
@@ -1004,7 +1005,7 @@
         var results = payload.results || [];
         hideSearchResults();
         if (results.length === 0) {
-          showStatus("No Ireland region results found for \"" + query + "\".", "error");
+          showStatus("No British Isles region results found for \"" + query + "\".", "error");
           return;
         }
         showStatus("Found " + results.length + " result(s). Select one below.", "");

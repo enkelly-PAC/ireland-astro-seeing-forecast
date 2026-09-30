@@ -16,7 +16,7 @@ if ($savedPid -notmatch "^\d+$") {
 $process = Get-CimInstance Win32_Process -Filter "ProcessId = $savedPid" -ErrorAction SilentlyContinue
 if ($process -and $process.CommandLine -match "meteoblue_seeing.+serve") {
     Stop-Process -Id ([int]$savedPid) -Force
-    Write-Host "Ireland forecast server stopped."
+    Write-Host "British Isles forecast server stopped."
 }
 else {
     Write-Host "The saved forecast server process is no longer running."

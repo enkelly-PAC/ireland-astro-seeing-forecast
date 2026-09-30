@@ -185,7 +185,8 @@ class TestSlugify(unittest.TestCase):
 class TestGenerateLocationForecast(unittest.TestCase):
     def test_validates_coordinates_before_any_network_call(self):
         with self.assertRaises(InputValidationError):
-            generate_location_forecast(51.5072, -0.1276, "London")
+            # Paris, France: continental Europe is out of scope.
+            generate_location_forecast(48.8566, 2.3522, "Paris")
 
     def test_validates_hours_before_any_network_call(self):
         with self.assertRaises(InputValidationError):

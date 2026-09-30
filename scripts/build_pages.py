@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_DIRECTORY = ROOT / "src" / "meteoblue_seeing" / "assets"
-SOURCE_HTML = SOURCE_DIRECTORY / "ireland_ui.html"
+SOURCE_HTML = SOURCE_DIRECTORY / "british_isles_ui.html"
 DEFAULT_OUTPUT = ROOT / "docs"
 
 API_META = '<meta name="astro-api-base" content="">'

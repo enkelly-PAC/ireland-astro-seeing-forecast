@@ -1,4 +1,4 @@
-"""Local HTTP server for the Ireland forecast UI.
+"""Local HTTP server for the British Isles forecast UI.
 
 The server binds to 127.0.0.1 by default and exposes three routes:
 
@@ -7,7 +7,7 @@ The server binds to 127.0.0.1 by default and exposes three routes:
 
 ``GET /api/geocode?q=...``
     A server-side proxy to the Open-Meteo Geocoding API, filtered to the
-    Ireland region.
+    British Isles region.
 
 ``GET /api/forecast?lat=...&lon=...&name=...&hours=96``
     A UKV seeing and cloud forecast for the requested point.
@@ -23,12 +23,12 @@ import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
-from .geocoding import DEFAULT_RESULT_LIMIT, geocode_search
-from .ireland import (
+from .british_isles import (
     DEFAULT_FORECAST_HOURS,
+    validate_british_isles_coordinates,
     validate_forecast_hours,
-    validate_ireland_coordinates,
 )
+from .geocoding import DEFAULT_RESULT_LIMIT, geocode_search
 from .ui import load_index_html, load_planet_asset
 from .validation import InputValidationError
 from .wicklow_forecast import generate_location_forecast
@@ -76,7 +76,7 @@ def parse_forecast_params(
     except ValueError as exc:
         raise InputValidationError("'hours' must be a whole number") from exc
 
-    validate_ireland_coordinates(latitude, longitude)
+    validate_british_isles_coordinates(latitude, longitude)
     hours = validate_forecast_hours(hours_value)
     return latitude, longitude, name, hours
 
@@ -108,10 +108,10 @@ def _write_webp(handler: BaseHTTPRequestHandler, status: int, body: bytes) -> No
     handler.wfile.write(body)
 
 
-class IrelandForecastRequestHandler(BaseHTTPRequestHandler):
+class BritishIslesForecastRequestHandler(BaseHTTPRequestHandler):
     """Routes ``/``, ``/api/geocode`` and ``/api/forecast``."""
 
-    server_version = "MeteoblueSeeingIrelandForecast/0.1"
+    server_version = "MeteoblueSeeingBritishIslesForecast/0.1"
 
     def log_message(self, format: str, *args: Any) -> None:  # noqa: A002 - stdlib signature
         # Keep the console quiet by default; override to add logging if needed.
@@ -138,7 +138,7 @@ class IrelandForecastRequestHandler(BaseHTTPRequestHandler):
                     200,
                     {
                         "status": "ok",
-                        "service": "Ireland astronomy forecast",
+                        "service": "British Isles astronomy forecast",
                         "version": "0.2",
                     },
                 )
@@ -160,20 +160,23 @@ class IrelandForecastRequestHandler(BaseHTTPRequestHandler):
             _write_json(self, 500, {"error": f"internal error: {exc}"})
 
 
+IrelandForecastRequestHandler = BritishIslesForecastRequestHandler
+
+
 def create_server(
     host: str = DEFAULT_HOST,
     port: int = DEFAULT_PORT,
 ) -> ThreadingHTTPServer:
     """Create (but do not start) the local HTTP server."""
 
-    return ThreadingHTTPServer((host, port), IrelandForecastRequestHandler)
+    return ThreadingHTTPServer((host, port), BritishIslesForecastRequestHandler)
 
 
 def serve_forever(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT) -> None:
     """Start the local server and block until interrupted."""
 
     httpd = create_server(host, port)
-    print(f"Serving the Ireland astronomy forecast UI on http://{host}:{port}/")
+    print(f"Serving the British Isles astronomy forecast UI on http://{host}:{port}/")
     print("Press Ctrl+C to stop.")
     try:
         httpd.serve_forever()

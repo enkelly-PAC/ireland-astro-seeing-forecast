@@ -7,10 +7,13 @@ Commands:
               Combine seeing with UKV clouds fetched from AWS Open Data.
   wicklow-forecast
               Generate a four-day UKV astronomy forecast for Wicklow Head.
-  ireland-forecast
-              Generate a rolling UKV astronomy forecast for any Ireland
-              location by latitude, longitude and name.
-  serve       Start the local Ireland forecast browser UI and API server.
+  british-isles-forecast
+              Generate a rolling UKV astronomy forecast for any British
+              Isles location by latitude, longitude and name. The
+              ``ireland-forecast`` alias is kept for backward
+              compatibility.
+  serve       Start the local British Isles forecast browser UI and API
+              server.
   parse-html  Extract table rows from a locally saved HTML page.
   calibrate   Fit model coefficients against a permitted CSV dataset.
 """
@@ -22,11 +25,11 @@ import json
 import sys
 from typing import Sequence
 
+from .british_isles import DEFAULT_FORECAST_HOURS
 from .calibrate import calibrate, load_calibration_csv
 from .config import SeeingConfig
 from .forecast import run_forecast
 from .html_parser import largest_table, parse_tables_from_file, rows_to_dicts
-from .ireland import DEFAULT_FORECAST_HOURS
 from .server import DEFAULT_HOST, DEFAULT_PORT, serve_forever
 from .ukv_clouds import (
     combine_forecast_with_ukv_cloud,
@@ -289,7 +292,7 @@ def _cmd_wicklow_forecast(args: argparse.Namespace) -> int:
     return 0
 
 
-def _cmd_ireland_forecast(args: argparse.Namespace) -> int:
+def _cmd_british_isles_forecast(args: argparse.Namespace) -> int:
     try:
         report = generate_location_forecast(
             args.latitude,
@@ -478,37 +481,42 @@ def build_parser() -> argparse.ArgumentParser:
     )
     wicklow_parser.set_defaults(func=_cmd_wicklow_forecast)
 
-    ireland_parser = subparsers.add_parser(
-        "ireland-forecast",
-        help="generate a rolling cloud and seeing forecast for any Ireland location",
+    british_isles_parser = subparsers.add_parser(
+        "british-isles-forecast",
+        aliases=["ireland-forecast"],
+        help=(
+            "generate a rolling cloud and seeing forecast for any British "
+            "Isles location (the ireland-forecast alias is kept for "
+            "backward compatibility)"
+        ),
     )
-    ireland_parser.add_argument(
+    british_isles_parser.add_argument(
         "--latitude", type=float, required=True, help="latitude in decimal degrees"
     )
-    ireland_parser.add_argument(
+    british_isles_parser.add_argument(
         "--longitude", type=float, required=True, help="longitude in decimal degrees"
     )
-    ireland_parser.add_argument(
+    british_isles_parser.add_argument(
         "--name",
         required=True,
         help="display name for the location, used in reports and filenames",
     )
-    ireland_parser.add_argument(
+    british_isles_parser.add_argument(
         "--hours",
         type=int,
         default=DEFAULT_FORECAST_HOURS,
         help="rolling forecast length in hours, 1 to 120 (default: 96)",
     )
-    ireland_parser.add_argument(
+    british_isles_parser.add_argument(
         "--output-directory",
         default="reports",
         help="directory for JSON and HTML reports (default: reports)",
     )
-    ireland_parser.set_defaults(func=_cmd_ireland_forecast)
+    british_isles_parser.set_defaults(func=_cmd_british_isles_forecast)
 
     serve_parser = subparsers.add_parser(
         "serve",
-        help="start the local Ireland forecast browser UI and API server",
+        help="start the local British Isles forecast browser UI and API server",
     )
     serve_parser.add_argument(
         "--host",

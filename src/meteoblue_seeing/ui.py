@@ -1,4 +1,4 @@
-"""Loads the packaged Ireland forecast browser UI HTML asset."""
+"""Loads the packaged British Isles forecast browser UI HTML asset."""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ def load_index_html() -> str:
     """Return the self-contained browser UI HTML as text."""
 
     asset = resources.files("meteoblue_seeing").joinpath(
-        "assets", "ireland_ui.html"
+        "assets", "british_isles_ui.html"
     )
     return asset.read_text(encoding="utf-8")
 

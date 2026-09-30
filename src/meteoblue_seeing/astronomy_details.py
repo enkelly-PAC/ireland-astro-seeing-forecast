@@ -1,4 +1,4 @@
-"""Planetary and lunar observing details for an Ireland forecast."""
+"""Planetary and lunar observing details for a British Isles forecast."""
 
 from __future__ import annotations
 
@@ -8,7 +8,8 @@ from zoneinfo import ZoneInfo
 
 import astronomy
 
-IRELAND_TIMEZONE = ZoneInfo("Europe/Dublin")
+BRITISH_ISLES_TIMEZONE = ZoneInfo("Europe/Dublin")
+IRELAND_TIMEZONE = BRITISH_ISLES_TIMEZONE
 
 BODY_DEFINITIONS = (
     ("moon", "Moon", astronomy.Body.Moon),
@@ -40,7 +41,7 @@ def _local_iso(value: astronomy.Time | None) -> str | None:
     if value is None:
         return None
     utc = value.Utc().replace(tzinfo=timezone.utc)
-    return utc.astimezone(IRELAND_TIMEZONE).isoformat()
+    return utc.astimezone(BRITISH_ISLES_TIMEZONE).isoformat()
 
 
 def _moon_phase_name(phase_degrees: float) -> str:
@@ -103,7 +104,7 @@ def _daily_body_details(
     observing_day_start = datetime.combine(
         local_date,
         time(hour=12),
-        tzinfo=IRELAND_TIMEZONE,
+        tzinfo=BRITISH_ISLES_TIMEZONE,
     )
     start = _astronomy_time(observing_day_start)
     transit = astronomy.SearchHourAngle(body, observer, 0.0, start)
@@ -156,10 +157,10 @@ def astronomy_days(
         }
 
     local_dates = sorted(
-        {value.astimezone(IRELAND_TIMEZONE).date() for value in forecast_times_utc}
+        {value.astimezone(BRITISH_ISLES_TIMEZONE).date() for value in forecast_times_utc}
     )
-    final_date = forecast_times_utc[-1].astimezone(IRELAND_TIMEZONE).date()
-    if forecast_times_utc[-1].astimezone(IRELAND_TIMEZONE).time() != time.min:
+    final_date = forecast_times_utc[-1].astimezone(BRITISH_ISLES_TIMEZONE).date()
+    if forecast_times_utc[-1].astimezone(BRITISH_ISLES_TIMEZONE).time() != time.min:
         local_dates = sorted(set(local_dates) | {final_date})
 
     observer = astronomy.Observer(latitude, longitude, elevation_m)

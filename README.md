@@ -1,10 +1,13 @@
-# Ireland Astro Seeing Forecast
+# British Isles Astro Seeing Forecast
 
 An imaging-first forecast and planning application for the Moon and planets
-across Ireland. It combines UK Met Office cloud and upper-air forecasts with
-an independent reconstruction of a meteoblue-style "Astronomy Seeing"
-forecast, built only from public documentation and standard atmospheric
-optics equations. **This project contains no
+across the British Isles (Great Britain, Ireland, Northern Ireland, the
+Isle of Man, the Channel Islands, the Hebrides, Orkney, Shetland and
+surrounding islands, excluding the Faroe Islands and continental Europe).
+It combines UK Met Office cloud and upper-air forecasts with an independent
+reconstruction of a meteoblue-style "Astronomy Seeing" forecast, built only
+from public documentation and standard atmospheric optics equations.
+**This project contains no
 proprietary meteoblue source code, model internals, weights, or scraped
 forecast data.** It is a best effort, clearly labelled approximation for
 research, learning and permitted black box calibration purposes.
@@ -142,17 +145,21 @@ src/meteoblue_seeing/
     ukv_clouds.py       Windy-exported UKV cloud CSV import and combination
     ukv_aws.py          direct Met Office UKV cloud retrieval from AWS Open Data
     wicklow_forecast.py Met Office UKV forecast pipeline; generalised to any
-                        Ireland location, with backward-compatible Wicklow
-                        Head wrappers
-    ireland.py          shared Ireland region bounding box and validation
+                        British Isles location, with backward-compatible
+                        Wicklow Head wrappers
+    british_isles.py    shared British Isles region bounding box and
+                        validation
+    ireland.py          backward-compatible alias module re-exporting
+                        british_isles.py under the original Ireland-branded
+                        names
     astronomy_details.py
                         Moon and planet rise, set, meridian, phase and
                         topocentric position calculations
     geocoding.py        server-side Open-Meteo Geocoding API proxy, filtered
-                        to Ireland
+                        to the British Isles
     server.py           local HTTP server (UI and API)
     ui.py               loads the packaged browser UI HTML asset
-    assets/ireland_ui.html
+    assets/british_isles_ui.html
                         the dark-theme browser UI (map, search, table, cards)
     cli.py              command line interface
 tests/                  unittest test suite
@@ -286,33 +293,38 @@ report includes `forecast_hours`, `requested_forecast_hours` and
 `skipped_hours_no_upper_air_data`. Under normal seamless-model operation,
 all requested hours are complete and the skipped count is zero.
 
-### `ireland-forecast`
+### `british-isles-forecast`
 
-The generalised, Ireland-wide equivalent of `wicklow-forecast`: run the
+The generalised, British Isles-wide equivalent of `wicklow-forecast`: run the
 same UKV pipeline for any selected latitude, longitude and name within the
-Ireland region (Republic of Ireland and Northern Ireland, plus a margin of
-nearby coastal waters).
+British Isles region (Great Britain, Ireland, Northern Ireland, the Isle of
+Man, the Channel Islands and surrounding islands, plus a margin of nearby
+coastal waters). The `ireland-forecast` command name is kept as a
+backward-compatible alias.
 
 ```
-python -m meteoblue_seeing ireland-forecast \
+python -m meteoblue_seeing british-isles-forecast \
   --latitude 53.0925 --longitude -7.9107 \
   --name "Birr, County Offaly, Ireland" \
   --hours 96 --output-directory reports
 ```
 
-Coordinates are validated against a generous Ireland region bounding box
-and `--hours` is validated to the range 1 to 120; invalid values are
-rejected explicitly rather than silently accepted. The site elevation used
-for the vertical profile is the UKV model-grid elevation returned by
-Open-Meteo for the requested point, not a fixed constant, so different
-locations use their own correct grid elevation.
+Coordinates are validated against a generous British Isles region bounding
+box (latitude 49.0 to 61.0, longitude -11.5 to 2.0; this deliberately
+excludes the Faroe Islands and continental Europe) and `--hours` is
+validated to the range 1 to 120; invalid values are rejected explicitly
+rather than silently accepted. The site elevation used for the vertical
+profile is the UKV model-grid elevation returned by Open-Meteo for the
+requested point, not a fixed constant, so different locations use their
+own correct grid elevation.
 
 ### `serve`
 
 Start a local HTTP server exposing a polished dark-theme browser UI: an
-OpenStreetMap-tiled Leaflet map centred on and bounded to Ireland, click to
-place a marker, a place search box backed by a server-side Open-Meteo
-Geocoding API proxy filtered to Ireland, a Generate Forecast button, an
+OpenStreetMap-tiled Leaflet map centred on and bounded to the British Isles,
+click to place a marker, a place search box backed by a server-side
+Open-Meteo Geocoding API proxy filtered to the British Isles, a Generate
+Forecast button, an
 hourly forecast table with ascending and descending column sorting,
 combined filters for light condition, maximum cloud, minimum seeing and
 minimum imaging score, and a target-specific planetary imaging planner.

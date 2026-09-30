@@ -60,7 +60,7 @@ def health(req: func.HttpRequest) -> func.HttpResponse:
     return _json_response(
         {
             "status": "ok",
-            "service": "Ireland astronomy forecast",
+            "service": "British Isles astronomy forecast",
             "version": "0.3",
         }
     )

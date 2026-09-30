@@ -68,9 +68,17 @@ class TestParseForecastParams(unittest.TestCase):
         with self.assertRaises(InputValidationError):
             parse_forecast_params({"lat": ["north"], "lon": ["-6.0"]})
 
-    def test_out_of_ireland_coordinates_are_rejected(self):
+    def test_london_is_now_accepted_as_great_britain_is_in_scope(self):
+        latitude, longitude, name, hours = parse_forecast_params(
+            {"lat": ["51.5072"], "lon": ["-0.1276"], "name": ["London"]}
+        )
+        self.assertAlmostEqual(latitude, 51.5072)
+        self.assertAlmostEqual(longitude, -0.1276)
+
+    def test_out_of_british_isles_coordinates_are_rejected(self):
         with self.assertRaises(InputValidationError):
-            parse_forecast_params({"lat": ["51.5072"], "lon": ["-0.1276"]})
+            # Paris, France: continental Europe is out of scope.
+            parse_forecast_params({"lat": ["48.8566"], "lon": ["2.3522"]})
 
     def test_hours_out_of_range_is_rejected(self):
         with self.assertRaises(InputValidationError):

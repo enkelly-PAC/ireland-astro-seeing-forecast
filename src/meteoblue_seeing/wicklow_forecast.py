@@ -1,11 +1,13 @@
-"""Ireland-wide astronomy forecast using UK Met Office model data.
+"""British Isles-wide astronomy forecast using UK Met Office model data.
 
 This module started as a Wicklow Head only forecast and has been
 generalised so that the same forecast pipeline can be run for any selected
-latitude, longitude and name within the Ireland region. The original
-Wicklow Head constants, functions and CLI behaviour are preserved: every
-public Wicklow function below is now a thin wrapper around the generic
-location functions, so existing callers keep working unchanged.
+latitude, longitude and name within the British Isles region (Great
+Britain, Ireland, Northern Ireland, the Isle of Man, the Channel Islands
+and surrounding islands). The original Wicklow Head constants, functions
+and CLI behaviour are preserved: every public Wicklow function below is
+now a thin wrapper around the generic location functions, so existing
+callers keep working unchanged.
 
 The four-day mode uses Open-Meteo's ``ukmo_seamless`` feed. It uses UKV
 2 km for the near term and UKMO Global 10 km for the extended period,
@@ -29,7 +31,10 @@ from .astronomy_details import astronomy_days, body_positions
 from .config import SeeingConfig
 from .forecast import run_forecast
 from .models import seeing_score_1_10
-from .ireland import validate_forecast_hours, validate_ireland_coordinates
+from .british_isles import (
+    validate_british_isles_coordinates,
+    validate_forecast_hours,
+)
 from .ukv_clouds import UkvCloudForecast, combine_forecast_with_ukv_cloud
 from .validation import InputValidationError
 
@@ -37,8 +42,9 @@ WICKLOW_HEAD_LATITUDE = 52.96544
 WICKLOW_HEAD_LONGITUDE = -6.00233
 WICKLOW_HEAD_ELEVATION_M = 84.0
 WICKLOW_HEAD_NAME = "Wicklow Head, County Wicklow, Ireland"
-IRELAND_TIMEZONE_NAME = "Europe/Dublin"
-WICKLOW_HEAD_TIMEZONE = ZoneInfo(IRELAND_TIMEZONE_NAME)
+BRITISH_ISLES_TIMEZONE_NAME = "Europe/Dublin"
+IRELAND_TIMEZONE_NAME = BRITISH_ISLES_TIMEZONE_NAME
+WICKLOW_HEAD_TIMEZONE = ZoneInfo(BRITISH_ISLES_TIMEZONE_NAME)
 PRESSURE_LEVELS_HPA = (1000, 925, 850, 700, 500, 300, 200)
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 
@@ -94,7 +100,7 @@ def fetch_ukv_forecast(
     url = build_open_meteo_url(forecast_hours, latitude, longitude)
     request = urllib.request.Request(
         url,
-        headers={"User-Agent": "wicklow-head-astronomy-forecast/0.1"},
+        headers={"User-Agent": "british-isles-astro-seeing-forecast/0.1"},
     )
     with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
         payload = json.loads(response.read().decode("utf-8"))
@@ -279,16 +285,16 @@ def generate_location_forecast(
     location_name: str,
     forecast_hours: int = 96,
 ) -> dict[str, Any]:
-    """Build a combined UKV cloud and seeing forecast for any Ireland location.
+    """Build a combined UKV cloud and seeing forecast for any British Isles location.
 
     The site elevation used for the vertical profile is the model-grid
     elevation returned by Open-Meteo for the requested point (the
     elevation of the UKV grid cell actually sampled), not a hardcoded
-    constant. Coordinates are validated against a generous Ireland region
-    bounding box and ``forecast_hours`` is validated to [1, 120].
+    constant. Coordinates are validated against a generous British Isles
+    region bounding box and ``forecast_hours`` is validated to [1, 120].
     """
 
-    validate_ireland_coordinates(latitude, longitude)
+    validate_british_isles_coordinates(latitude, longitude)
     forecast_hours = validate_forecast_hours(forecast_hours)
 
     payload = fetch_ukv_forecast(forecast_hours, latitude, longitude)
@@ -368,7 +374,7 @@ def generate_location_forecast(
             "latitude": latitude,
             "longitude": longitude,
             "site_elevation_m_asl": elevation_m_asl,
-            "timezone": IRELAND_TIMEZONE_NAME,
+            "timezone": BRITISH_ISLES_TIMEZONE_NAME,
         },
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace(
             "+00:00", "Z"
@@ -518,7 +524,7 @@ code {{ color: #b8d7ff; }}
 </head>
 <body><main>
 <h1>{h1_text}</h1>
-<div class="muted">Coming {report['forecast_hours']} hours. Generated {generated}. Times are Europe/Dublin.</div>
+<div class="muted">Coming {report['forecast_hours']} hours. Generated {generated}. Times are Europe/Dublin (shared UK and Ireland civil time).</div>
 <h2>Best planetary imaging conditions</h2>
 <div class="cards">{''.join(cards) if cards else '<div class="card">No dark forecast periods available.</div>'}</div>
 <h2>Hourly forecast</h2>

@@ -15,7 +15,7 @@ $HostName = "127.0.0.1"
 $Port = 8765
 $Url = "http://$($HostName):$($Port)/"
 
-Write-Host "Starting the Ireland astronomy forecast server on $Url"
+Write-Host "Starting the British Isles astronomy forecast server on $Url"
 
 $serverProcess = Start-Process -FilePath "python" `
     -ArgumentList @("-m", "meteoblue_seeing", "serve", "--host", $HostName, "--port", $Port) `

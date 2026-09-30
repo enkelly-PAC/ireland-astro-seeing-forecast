@@ -3,11 +3,11 @@ import unittest
 from meteoblue_seeing.ui import load_index_html
 
 
-class TestIrelandPickerUi(unittest.TestCase):
+class TestBritishIslesPickerUi(unittest.TestCase):
     def test_page_uses_short_title(self):
         content = load_index_html()
-        self.assertIn("<title>Ireland Astro Seeing Forecast</title>", content)
-        self.assertIn("<h1>Ireland Astro Seeing Forecast</h1>", content)
+        self.assertIn("<title>British Isles Astro Seeing Forecast</title>", content)
+        self.assertIn("<h1>British Isles Astro Seeing Forecast</h1>", content)
 
     def test_map_click_populates_coordinate_search(self):
         content = load_index_html()

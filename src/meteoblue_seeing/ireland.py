@@ -1,70 +1,53 @@
-"""Shared Ireland wide location constants and validation helpers.
+"""Backward-compatible alias module for :mod:`meteoblue_seeing.british_isles`.
 
-These bounds are deliberately generous: they cover the island of Ireland
-(both the Republic of Ireland and Northern Ireland) plus a margin of
-nearby coastal waters, so that headlands, islands and offshore observing
-sites are not rejected by an overly tight box.
+This project originally covered only Ireland (the Republic of Ireland and
+Northern Ireland) and this module held the region bounding box and
+validation helpers. The project has since expanded in scope to the whole
+British Isles: Great Britain, Ireland, Northern Ireland, the Isle of Man,
+the Channel Islands, the Hebrides, Orkney, Shetland and surrounding
+islands (excluding the Faroe Islands and continental Europe). The
+canonical constants and helpers now live in
+:mod:`meteoblue_seeing.british_isles`.
+
+This module is kept, re-exporting the wider bounds under their original
+Ireland-branded names, purely so any existing code that imports from
+``meteoblue_seeing.ireland`` keeps working unchanged. New code should
+import from :mod:`meteoblue_seeing.british_isles` directly.
 """
 
 from __future__ import annotations
 
-import math
+from .british_isles import (
+    BRITISH_ISLES_MAX_LATITUDE,
+    BRITISH_ISLES_MAX_LONGITUDE,
+    BRITISH_ISLES_MIN_LATITUDE,
+    BRITISH_ISLES_MIN_LONGITUDE,
+    DEFAULT_FORECAST_HOURS,
+    MAX_FORECAST_HOURS,
+    MIN_FORECAST_HOURS,
+    is_within_british_isles_region,
+    validate_british_isles_coordinates,
+    validate_forecast_hours,
+)
 
-from .validation import InputValidationError
+# Deprecated aliases, kept for backward compatibility.
+IRELAND_MIN_LATITUDE = BRITISH_ISLES_MIN_LATITUDE
+IRELAND_MAX_LATITUDE = BRITISH_ISLES_MAX_LATITUDE
+IRELAND_MIN_LONGITUDE = BRITISH_ISLES_MIN_LONGITUDE
+IRELAND_MAX_LONGITUDE = BRITISH_ISLES_MAX_LONGITUDE
 
-IRELAND_MIN_LATITUDE = 51.0
-IRELAND_MAX_LATITUDE = 55.6
-IRELAND_MIN_LONGITUDE = -11.5
-IRELAND_MAX_LONGITUDE = -5.0
+validate_ireland_coordinates = validate_british_isles_coordinates
+is_within_ireland_region = is_within_british_isles_region
 
-MIN_FORECAST_HOURS = 1
-MAX_FORECAST_HOURS = 120
-DEFAULT_FORECAST_HOURS = 96
-
-
-def validate_ireland_coordinates(latitude: float, longitude: float) -> None:
-    """Raise ``InputValidationError`` unless the point is within the Ireland region."""
-
-    if isinstance(latitude, bool) or not isinstance(latitude, (int, float)):
-        raise InputValidationError("latitude must be a number")
-    if isinstance(longitude, bool) or not isinstance(longitude, (int, float)):
-        raise InputValidationError("longitude must be a number")
-    if not math.isfinite(latitude) or not math.isfinite(longitude):
-        raise InputValidationError("latitude and longitude must be finite numbers")
-    if not (IRELAND_MIN_LATITUDE <= latitude <= IRELAND_MAX_LATITUDE):
-        raise InputValidationError(
-            "latitude "
-            f"{latitude} is outside the Ireland region "
-            f"[{IRELAND_MIN_LATITUDE}, {IRELAND_MAX_LATITUDE}]"
-        )
-    if not (IRELAND_MIN_LONGITUDE <= longitude <= IRELAND_MAX_LONGITUDE):
-        raise InputValidationError(
-            "longitude "
-            f"{longitude} is outside the Ireland region "
-            f"[{IRELAND_MIN_LONGITUDE}, {IRELAND_MAX_LONGITUDE}]"
-        )
-
-
-def validate_forecast_hours(hours: int | float) -> int:
-    """Validate and coerce a requested forecast length in hours, 1 to 120."""
-
-    if isinstance(hours, bool) or not isinstance(hours, (int, float)):
-        raise InputValidationError("hours must be a whole number")
-    if not math.isfinite(hours) or hours != int(hours):
-        raise InputValidationError("hours must be a whole number")
-    hours_int = int(hours)
-    if hours_int < MIN_FORECAST_HOURS or hours_int > MAX_FORECAST_HOURS:
-        raise InputValidationError(
-            f"hours must be within [{MIN_FORECAST_HOURS}, {MAX_FORECAST_HOURS}]: {hours_int}"
-        )
-    return hours_int
-
-
-def is_within_ireland_region(latitude: float, longitude: float) -> bool:
-    """Return ``True`` if the coordinate falls inside the generous Ireland box."""
-
-    try:
-        validate_ireland_coordinates(latitude, longitude)
-    except InputValidationError:
-        return False
-    return True
+__all__ = [
+    "IRELAND_MIN_LATITUDE",
+    "IRELAND_MAX_LATITUDE",
+    "IRELAND_MIN_LONGITUDE",
+    "IRELAND_MAX_LONGITUDE",
+    "MIN_FORECAST_HOURS",
+    "MAX_FORECAST_HOURS",
+    "DEFAULT_FORECAST_HOURS",
+    "validate_ireland_coordinates",
+    "validate_forecast_hours",
+    "is_within_ireland_region",
+]
