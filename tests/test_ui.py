@@ -88,6 +88,10 @@ class TestIrelandPickerUi(unittest.TestCase):
             "The planner searches every selected night and ranks the strongest",
             content,
         )
+        self.assertIn(
+            "Hours after midnight remain part of the",
+            content,
+        )
         self.assertIn("All available nights are selected by default", content)
         self.assertIn('id="select-all-nights"', content)
         self.assertIn('id="clear-nights"', content)
@@ -102,6 +106,12 @@ class TestIrelandPickerUi(unittest.TestCase):
         self.assertIn("entries.slice(index, index + 2)", content)
         self.assertIn("function renderPrimarySession", content)
         self.assertIn("function renderAlternativeSessions", content)
+        self.assertIn("function formatObservingNightDate(nightDate)", content)
+        self.assertIn("formatObservingNightDate(session.nightDate)", content)
+        self.assertNotIn(
+            "formatSessionDate(new Date(session.start.forecast.local_time))",
+            content,
+        )
         self.assertIn("position.altitude_degrees >= 10", content)
         self.assertIn("function seeingRating(score)", content)
         self.assertIn("class='seeing-rating'", content)
